@@ -1,0 +1,2858 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>E2E-Commerce · Marketplace (estilo ML)</title>
+<style>
+  :root{
+    /* paleta clara inspirada, mas original */
+    --y-50:#fff8e1; --y-200:#ffe08a; --y-400:#ffd050; --y-500:#ffc323;
+    --ink:#111827; --mut:#667085; --line:#e5e7eb; --card:#ffffff; --bg:#ffd050;
+    --brand:#0ea5e9; --brand-600:#0284c7; --good:#12b76a; --warn:#f79009;
+    --r:14px; --r-sm:10px; --shadow:0 8px 30px rgba(16,24,40,.08);
+  }
+  *{box-sizing:border-box} html,body{height:100%}
+  body{margin:0;background:var(--bg);color:var(--ink);
+       font:500 15px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,Arial}
+  a{color:inherit;text-decoration:none}
+  .wrap{max-width:1200px;margin:0 auto;padding:0 16px}
+
+  /* TOP FIXO */
+  .top{position:sticky;top:0;z-index:50;background:var(--y-400);box-shadow:none}
+  .top .row1{display:grid;grid-template-columns:180px 1fr 260px 80px;gap:20px;align-items:center;padding:10px 16px}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:900;letter-spacing:.3px}
+  .brand .dot{width:12px;height:12px;border-radius:50%;background:var(--y-500);
+              box-shadow:0 0 0 6px var(--y-50)}
+  .loc{display:flex;align-items:center;gap:8px;color:var(--mut);font-size:13px}
+  .cep-form{display:flex;align-items:center;gap:8px}
+  .cep-form input{width:120px;padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:#fff;color:var(--ink)}
+  .cep-form button{padding:8px 10px;border-radius:8px;border:1px solid var(--brand-600);background:var(--brand);color:#fff}
+  .search{display:flex;gap:8px}
+  .search input{flex:1;padding:12px 14px;border-radius:10px;border:1px solid var(--line);background:#fff}
+  .search button{padding:12px 16px;border-radius:10px;border:1px solid var(--brand-600);background:var(--brand);color:#fff}
+  .cart-btn{display:grid;place-items:center;border:1px solid var(--line);border-radius:10px;height:40px;background:#fff;position:relative}
+  .badge{position:absolute;top:-6px;right:-6px;background:var(--warn);color:#111;padding:2px 6px;border-radius:999px;font-size:12px;font-weight:800}
+
+  .row2{border-top:none;background:var(--y-400)}
+  .nav{display:flex;gap:16px;overflow:auto;padding:10px 16px}
+  .nav a{color:#334155;font-weight:600;white-space:nowrap;padding:8px 12px;border-radius:8px;transition:all 0.2s}
+  .nav a:hover{color:#0f172a;background:rgba(255,255,255,0.2)}
+  .nav a.active{background:var(--brand);color:#fff;font-weight:700}
+
+  /* HERO */
+  .hero{background:linear-gradient(180deg,var(--y-500),var(--y-400));}
+  .hero .wrap{display:grid;grid-template-columns:1fr 320px;gap:16px;align-items:center;padding:22px 16px}
+  .hero h2{margin:0;font-size:28px;line-height:1.2}
+  .hero p{margin:8px 0 0;color:#3a2a00}
+  .hero .banner{height:140px;border-radius:14px;background:radial-gradient(110px 110px at 20% 50%, #fff6ce, transparent),
+                                           radial-gradient(160px 120px at 80% 50%, #ffe9a3, transparent),
+                                           var(--y-400);
+                border:1px dashed rgba(0,0,0,.08); display:grid;place-items:center;font-weight:800;color:#7a5200}
+
+  /* SHORTCUTS */
+  .shortcuts{background:var(--y-400);border-top:none;border-bottom:none}
+  .short{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;padding:14px 0}
+  @media (max-width:900px){.short{grid-template-columns:repeat(3,1fr)}}
+  .tile{background:var(--card);border:none;border-radius:12px;box-shadow:var(--shadow);
+        display:flex;align-items:center;gap:10px;padding:12px}
+  .ic{width:42px;height:42px;border-radius:10px;background:var(--y-50);display:grid;place-items:center;font-size:20px}
+
+  /* GRID PRODUTOS */
+  main.wrap{padding:18px 16px}
+  .cards{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+  @media (max-width:1100px){.cards{grid-template-columns:repeat(3,1fr)}}
+  @media (max-width:780px){.cards{grid-template-columns:repeat(2,1fr)}}
+  @media (max-width:520px){.cards{grid-template-columns:1fr}}
+  .card{background:var(--y-400);border:none;border-radius:12px;overflow:hidden;box-shadow:var(--shadow);display:flex;flex-direction:column}
+  .thumb{aspect-ratio:1/1;background:#f3f4f6;display:grid;place-items:center;font-size:12px;color:var(--mut)}
+  .ci{padding:12px;display:grid;gap:6px}
+  .price{font-size:18px;font-weight:900}
+  .sub{color:var(--mut);font-size:13px}
+  .pill{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:4px 8px;font-size:12px;
+        background:#e7f8ee;color:#084c2e;border:1px solid #b4efcb}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:10px 12px;border-radius:10px;
+       border:1px solid var(--line);background:#fff}
+  .btn.brand{background:var(--ink);color:#fff;border-color:#111}
+
+  /* ADMIN/LOGIN (stubs) */
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;place-items:center;z-index:100}
+  .modal.show{display:grid}
+  .sheet{width:520px;max-width:92vw;background:var(--y-400);border:none;border-radius:14px;box-shadow:var(--shadow);padding:16px}
+  .sheet h3{margin:4px 0 10px 0}
+  .form{display:grid;gap:10px}
+  .form input, .form select, .form textarea{padding:12px;border-radius:10px;border:1px solid var(--line);background:#fff;font-family:inherit}
+  .form textarea{resize:vertical;min-height:80px}
+  .err{color:#b42318;font-size:13px}
+  
+  /* PRODUTOS ADMIN */
+  .product-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;margin-bottom:20px}
+  .product-card{background:#fff;border-radius:12px;padding:16px;box-shadow:var(--shadow);border:1px solid var(--line)}
+  .product-card h4{margin:0 0 8px 0;color:var(--ink)}
+  .product-card .price{font-size:18px;font-weight:900;color:var(--good);margin:8px 0}
+  .product-card .category{background:var(--y-50);color:var(--ink);padding:4px 8px;border-radius:6px;font-size:12px;display:inline-block;margin:4px 0}
+  .product-card .stock{font-size:14px;color:var(--mut);margin:4px 0}
+  .product-card .status{display:inline-block;padding:2px 8px;border-radius:12px;font-size:12px;font-weight:600;margin:4px 0}
+  .product-card .status.active{background:#e7f8ee;color:#084c2e}
+  .product-card .status.inactive{background:#fef2f2;color:#991b1b}
+  .product-actions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+  .product-actions .btn{font-size:12px;padding:6px 10px}
+  
+  /* ESTOQUE */
+  .stock-control{background:#fff;border-radius:12px;padding:16px;margin-bottom:16px}
+  .stock-info{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;padding:12px;background:var(--y-50);border-radius:8px}
+  .stock-input{display:flex;gap:8px;align-items:center}
+  .stock-input input{width:100px;text-align:center}
+  .stock-buttons{display:flex;gap:8px;flex-wrap:wrap}
+  .stock-buttons .btn{flex:1;min-width:80px}
+  
+  /* TABELA DE PRODUTOS */
+  .products-table{width:100%;border-collapse:collapse;background:#fff;border-radius:12px;overflow:hidden;box-shadow:var(--shadow)}
+  .products-table th,.products-table td{padding:12px;text-align:left;border-bottom:1px solid var(--line)}
+  .products-table th{background:var(--y-50);font-weight:600;color:var(--ink)}
+  .products-table tr:hover{background:#f9fafb}
+  .product-image{width:60px;height:60px;border-radius:8px;object-fit:cover;background:var(--y-50)}
+  .product-name{font-weight:600;color:var(--ink)}
+  .product-price{font-weight:900;color:var(--good)}
+  .product-stock{font-weight:600}
+  .product-actions-cell{white-space:nowrap}
+  .product-actions-cell .btn{margin:2px;font-size:11px;padding:4px 8px}
+  
+  /* CARRINHO E PEDIDOS */
+  .cart-item{display:grid;grid-template-columns:64px 1fr auto;gap:10px;align-items:center;border:none;border-radius:10px;padding:8px;background:#fafafa;margin-bottom:8px}
+  .cart-item img{width:64px;height:64px;border-radius:8px;object-fit:cover}
+  .cart-item-info{display:flex;flex-direction:column;gap:4px}
+  .cart-item-controls{display:flex;align-items:center;gap:8px}
+  .cart-item-controls button{width:24px;height:24px;border-radius:50%;border:1px solid var(--line);background:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer}
+  .cart-item-controls button:hover{background:var(--y-50)}
+  .cart-item-controls button:disabled{opacity:0.5;cursor:not-allowed}
+  
+  /* CHECKOUT */
+  .checkout-section{background:#fff;border-radius:12px;padding:16px;margin-bottom:16px;box-shadow:var(--shadow)}
+  .checkout-section h4{margin:0 0 12px 0;color:var(--ink)}
+  .address-card{background:var(--y-50);border:2px solid var(--line);border-radius:8px;padding:12px;margin-bottom:8px;cursor:pointer;transition:all 0.2s}
+  .address-card:hover{border-color:var(--brand)}
+  .address-card.selected{border-color:var(--brand);background:var(--y-200)}
+  .address-card h5{margin:0 0 4px 0;color:var(--ink)}
+  .address-card p{margin:0;color:var(--mut);font-size:14px}
+  
+  /* PEDIDOS */
+  .order-card{background:#fff;border-radius:12px;padding:16px;margin-bottom:16px;box-shadow:var(--shadow);border-left:4px solid var(--brand)}
+  .order-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+  .order-number{font-weight:700;color:var(--ink)}
+  .order-date{color:var(--mut);font-size:14px}
+  .order-status{display:inline-block;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;text-transform:uppercase}
+  .order-status.aguardando{background:#fef3c7;color:#92400e}
+  .order-status.pago{background:#d1fae5;color:#065f46}
+  .order-status.transporte{background:#dbeafe;color:#1e40af}
+  .order-status.entregue{background:#e5e7eb;color:#374151}
+  .order-items{margin:12px 0}
+  .order-item{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
+  .order-item:last-child{border-bottom:none}
+  .order-total{display:flex;justify-content:space-between;align-items:center;margin-top:12px;padding-top:12px;border-top:2px solid var(--line);font-weight:700;font-size:18px}
+  
+  /* STATUS FLOW */
+  .status-flow{display:flex;align-items:center;gap:8px;margin:12px 0}
+  .status-step{display:flex;align-items:center;gap:4px;padding:8px 12px;border-radius:20px;font-size:12px;font-weight:600}
+  .status-step.completed{background:var(--good);color:#fff}
+  .status-step.current{background:var(--brand);color:#fff}
+  .status-step.pending{background:var(--line);color:var(--mut)}
+  .status-arrow{color:var(--mut);font-size:16px}
+  
+  /* CANCELAMENTO E DEVOLUÇÃO */
+  .order-actions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+  .order-actions .btn{font-size:12px;padding:6px 12px}
+  .cancel-reason{width:100%;min-height:80px;padding:12px;border:1px solid var(--line);border-radius:8px;resize:vertical;font-family:inherit}
+  .return-item{display:flex;align-items:center;gap:12px;padding:12px;border:1px solid var(--line);border-radius:8px;margin-bottom:8px}
+  .return-item input[type="checkbox"]{width:18px;height:18px}
+  .return-item-info{flex:1}
+  .return-item-qty{display:flex;align-items:center;gap:8px}
+  .return-item-qty input{width:60px;text-align:center}
+  .timeout-warning{background:#fef3c7;color:#92400e;padding:8px 12px;border-radius:6px;font-size:14px;margin:8px 0}
+  .return-deadline{background:#e7f8ee;color:#065f46;padding:8px 12px;border-radius:6px;font-size:14px;margin:8px 0}
+  
+  /* ADMINISTRAÇÃO */
+  .admin-dashboard{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px;margin-bottom:30px}
+  .admin-card{background:#fff;border-radius:12px;padding:20px;box-shadow:var(--shadow);border-left:4px solid var(--brand)}
+  .admin-card h4{margin:0 0 12px 0;color:var(--ink);display:flex;align-items:center;gap:8px}
+  .admin-card .number{font-size:32px;font-weight:900;color:var(--brand);margin:8px 0}
+  .admin-card .description{color:var(--mut);font-size:14px}
+  .admin-actions{display:flex;gap:12px;margin-top:16px;flex-wrap:wrap}
+  .admin-actions .btn{font-size:14px;padding:8px 16px}
+  
+  /* TABELAS ADMINISTRATIVAS */
+  .admin-table{width:100%;border-collapse:collapse;background:#fff;border-radius:12px;overflow:hidden;box-shadow:var(--shadow);margin-bottom:20px}
+  .admin-table th,.admin-table td{padding:12px;text-align:left;border-bottom:1px solid var(--line)}
+  .admin-table th{background:var(--y-50);font-weight:600;color:var(--ink)}
+  .admin-table tr:hover{background:#f9fafb}
+  .admin-table .actions{white-space:nowrap}
+  .admin-table .actions .btn{margin:2px;font-size:11px;padding:4px 8px}
+  
+  /* STATUS BADGES */
+  .status-badge{display:inline-block;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;text-transform:uppercase}
+  .status-badge.active{background:#d1fae5;color:#065f46}
+  .status-badge.inactive{background:#fef2f2;color:#991b1b}
+  .status-badge.admin{background:#dbeafe;color:#1e40af}
+  .status-badge.client{background:#e5e7eb;color:#374151}
+  
+  /* FORNECEDORES */
+  .supplier-card{background:#fff;border-radius:12px;padding:16px;box-shadow:var(--shadow);border:1px solid var(--line);margin-bottom:16px}
+  .supplier-card h5{margin:0 0 8px 0;color:var(--ink)}
+  .supplier-card .contact{color:var(--mut);font-size:14px;margin:4px 0}
+  .supplier-card .status{display:inline-block;margin-top:8px}
+  
+  /* ESTATÍSTICAS */
+  .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:20px}
+  .stat-card{background:#fff;border-radius:8px;padding:16px;text-align:center;box-shadow:var(--shadow)}
+  .stat-card .icon{font-size:24px;margin-bottom:8px}
+  .stat-card .value{font-size:24px;font-weight:700;color:var(--brand);margin:4px 0}
+  .stat-card .label{color:var(--mut);font-size:14px}
+
+  /* CART DRAWER */
+  .drawer{position:fixed;top:0;right:-440px;width:420px;max-width:100%;height:100%;background:var(--y-400);border-left:none;
+          box-shadow:-20px 0 60px rgba(0,0,0,.15);transition:right .25s ease;z-index:90;padding:16px 14px}
+  .drawer.open{right:0}
+  .cart-items{display:grid;gap:10px;max-height:60vh;overflow:auto}
+  .cart-item{display:grid;grid-template-columns:64px 1fr auto;gap:10px;align-items:center;border:none;border-radius:10px;padding:8px;background:#fafafa}
+  .tot{display:flex;justify-content:space-between;align-items:center;border-top:none;padding-top:10px;margin-top:10px}
+
+  footer{color:var(--mut);font-size:13px;text-align:center;padding:16px}
+</style>
+</head>
+<body>
+
+<!-- TOP -->
+<header class="top">
+  <div class="wrap row1">
+    <a href="#" class="brand" id="homeLink"><span class="dot"></span> E2E-Commerce</a>
+    <div class="loc" id="locArea">
+      <span>📍</span>
+      <form class="cep-form" id="cepForm" onsubmit="return false;">
+        <input id="cepInput" placeholder="CEP" maxlength="9">
+        <button id="cepSave">OK</button>
+      </form>
+      <span id="cepMsg"></span>
+    </div>
+    <div class="search">
+      <input id="q" placeholder="Buscar produtos, marcas e muito mais…">
+    </div>
+    <button class="cart-btn" id="cartBtn" aria-label="Abrir carrinho">🛒<span class="badge" id="cartCount">0</span></button>
+  </div>
+  <nav class="row2">
+    <div class="wrap nav">
+      <a href="#" onclick="filterByCategory('')">Todos</a>
+      <a href="#" onclick="filterByCategory('Smartphones')">Smartphones</a>
+      <a href="#" onclick="filterByBrand('iPhone')">iPhone</a>
+      <a href="#" onclick="filterByBrand('Samsung')">Samsung</a>
+      <a href="#" onclick="filterByBrand('Xiaomi')">Xiaomi</a>
+      <a href="#" onclick="filterByCategory('Tablets')">Tablets</a>
+      <a href="#" onclick="filterByCategory('Gaming')">PlayStation</a>
+      <span style="margin-left:auto;display:flex;gap:12px">
+        <a href="#" id="btnCreate">Crie sua conta</a>
+        <a href="#" id="ordersLink" style="display:none">Meus Pedidos</a>
+        <a href="#" id="productMgmtLink">Gestão de Produtos</a>
+        <a href="#" id="adminLink" style="display:none">Painel Admin</a>
+        <a href="#" id="logoutLink" style="display:none">Sair</a>
+      </span>
+    </div>
+  </nav>
+
+</header>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="wrap">
+    <div>
+      <h2>O melhor tá sempre chegando 🚚✨</h2>
+      <p>Ofertas ativas, frete rápido e pagamento seguro.</p>
+    </div>
+    <div class="banner">🔥 Ofertas da semana</div>
+  </div>
+</section>
+
+<!-- ESPECIFICAÇÃO · GESTÃO DE PRODUTOS (DOCUMENTAÇÃO) (oculto por padrão) -->
+<section class="wrap" style="padding:0 16px 18px 16px; display:none">
+  <div class="card" style="border:none;background:var(--y-400);border-radius:12px;overflow:hidden;box-shadow:var(--shadow)">
+    <div class="hd" style="background:#ffe08a;border-bottom:none">
+      <h3 style="color:#111">Gestão de Produtos (Operação / Estoque)</h3>
+      <span class="pill" style="background:#fff;border:1px solid var(--line);color:#334155">MySQL · consulta + acréscimo em lotes</span>
+    </div>
+    <div class="bd" style="color:#111">
+      <p><strong>Contexto</strong> — Produtos cadastrados em <em>MySQL</em>. Alunos não podem criar/editar dados cadastrais; apenas consultar e <strong>acrescentar estoque</strong> em <strong>múltiplos de 10</strong> (10, 20, 30…).</p>
+      <ul class="list" style="grid-template-columns:1fr;">
+        <li class="item"><div class="txt"><strong>Escopo:</strong> consultar/listar; buscar por nome; filtrar por categoria; ordenar por preço/estoque; ver detalhes (nome, descrição, categoria, preço, estoque, imagem); aumentar estoque em lotes de 10.</div></li>
+        <li class="item"><div class="txt"><strong>Fora de Escopo:</strong> criar/editar/excluir produtos; alterar preço, nome, descrição, categoria; reduzir estoque.</div></li>
+        <li class="item"><div class="txt"><strong>Regras de Negócio:</strong> apenas múltiplos de 10; nunca negativo; respeitar <em>limite máximo</em> (se houver); produtos inativos não recebem acréscimo; confirmar antes; mostrar estoque atualizado; manter valor exibido se falhar; imagens pelo front.</div></li>
+        <li class="item"><div class="txt"><strong>Critérios de Aceite:</strong> lista paginada (nome, categoria, preço, estoque); busca e filtro; detalhe com estoque; seletor 10/20/30/40…; confirmação; atualização com sucesso; erros mostram mensagem e cancelam operação; sem “Novo/Editar/Excluir”.</div></li>
+        <li class="item"><div class="txt"><strong>Fluxo Principal:</strong> acessar Gestão de Produtos → listar → buscar/filtrar → selecionar e ver detalhes.</div></li>
+        <li class="item"><div class="txt"><strong>Fluxo – Acréscimo em Lotes:</strong> escolher lote (10/20/30…) → “Adicionar ao estoque” → confirmar “Adicionar +N ao produto X?” → aplicar → ver novo estoque.</div></li>
+        <li class="item"><div class="txt"><strong>Exceções:</strong> valor inválido (não múltiplo de 10); produto inativo; limite máximo excedido; falha de atualização.</div></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- SHORTCUTS -->
+<section class="shortcuts">
+  <div class="wrap short">
+    <a class="tile" href="#" id="tileLogin"><div class="ic">👤</div> Entre na sua conta</a>
+    <a class="tile" href="#" id="tileCep"><div class="ic">📍</div> Insira sua localização</a>
+    <a class="tile" href="#"><div class="ic">💳</div> Meios de pagamento</a>
+    <a class="tile" href="#"><div class="ic">💲</div> Menos de R$100</a>
+    <a class="tile" href="#" id="tileBest"><div class="ic">🔥</div> Mais vendidos</a>
+    <a class="tile" href="#"><div class="ic">🛡️</div> Compra garantida</a>
+  </div>
+
+</section>
+
+<!-- LISTAGEM -->
+<main class="wrap">
+  <h3 style="margin:14px 0">🔥 4 Ofertas Imperdíveis</h3>
+  <div class="cards" id="cards"></div>
+</main>
+
+<!-- PROD MANAGEMENT -->
+<section class="wrap" id="pmSection" style="display:none;padding:18px 16px">
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin:6px 0 14px">
+    <h3 style="margin:0">Gestão de Produtos</h3>
+    <div style="display:flex;gap:8px">
+      <button class="btn" id="pmBack">Voltar</button>
+    </div>
+  </div>
+  <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px">
+    <input id="pmQ" placeholder="Buscar por nome" style="padding:10px;border:1px solid var(--line);border-radius:8px;background:#fff">
+    <select id="pmCat" style="padding:10px;border:1px solid var(--line);border-radius:8px;background:#fff"></select>
+    <select id="pmSort" style="padding:10px;border:1px solid var(--line);border-radius:8px;background:#fff">
+      <option value="price_asc">Preço ↑</option>
+      <option value="price_desc">Preço ↓</option>
+      <option value="stock_desc">Estoque ↓</option>
+      <option value="stock_asc">Estoque ↑</option>
+    </select>
+  </div>
+  <div id="pmList" style="background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden">
+    <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr;gap:0;background:#f8fafc;color:#334155;padding:10px 12px;font-weight:700">
+      <div>Nome</div><div>Categoria</div><div>Preço</div><div>Estoque</div><div>Ajuste</div>
+    </div>
+    <div id="pmRows" style="display:grid"></div>
+  </div>
+  <div style="display:flex;gap:8px;align-items:center;justify-content:flex-end;margin-top:10px">
+    <button class="btn" id="pmPrev">Anterior</button>
+    <span id="pmPage" style="color:var(--mut)">1/1</span>
+    <button class="btn" id="pmNext">Próxima</button>
+  </div>
+</section>
+
+<!-- DRAWER CARRINHO -->
+<aside class="drawer" id="drawer">
+  <h3>Seu carrinho</h3>
+  <div class="cart-items" id="cartItems"></div>
+  <div class="tot">
+    <strong>Total:</strong> <span id="cartTotal">R$ 0,00</span>
+  </div>
+  <div style="display:grid;gap:8px;margin-top:10px">
+    <button class="btn brand" id="checkoutBtn" disabled>Finalizar compra</button>
+    <button class="btn" id="closeDrawer">X</button>
+  </div>
+</aside>
+
+<!-- MODAL LOGIN/CRIAR -->
+<div class="modal" id="authModal" aria-hidden="true">
+  <div class="sheet">
+    <h3 id="authTitle">Entrar / Criar conta</h3>
+    <div class="form">
+      <input id="aNome" placeholder="Nome completo">
+      <input id="aEmail" placeholder="E-mail">
+      <input id="aSenha" type="password" placeholder="Senha (mínimo 10 caracteres, números, letras e símbolos)">
+      <select id="aPerfil">
+        <option value="cliente">Cliente</option>
+        <option value="vendedor">Vendedor</option>
+      </select>
+      <div class="err" id="aErr"></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn brand" id="btnLogin">Entrar</button>
+        <button class="btn" id="btnSignup">Criar conta</button>
+        <button class="btn" id="btnCloseAuth">X</button>
+      </div>
+      <small class="mut">Sessão real com idle 30 min será no backend.</small>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DETALHES PRODUTO -->
+<div class="modal" id="productModal" aria-hidden="true">
+  <div class="sheet" style="max-width:600px">
+    <h3 id="productTitle">Detalhes do Produto</h3>
+    <div id="productContent"></div>
+    <div style="display:flex;gap:8px;margin-top:16px">
+      <button class="btn brand" id="btnAddToCart">Adicionar ao carrinho</button>
+      <button class="btn" id="btnCloseProduct">X</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL PAGAMENTOS -->
+<div class="modal" id="paymentsModal" aria-hidden="true">
+  <div class="sheet" style="max-width:560px">
+    <h3>Meios de pagamento</h3>
+    <div class="form">
+      <div>Cartão de crédito, débito e PIX (mock).</div>
+      <ul style="margin:0;padding-left:18px;color:#334155">
+        <li>Crédito/Débito: brands de teste; CVV 3 dígitos; limite simulado.</li>
+        <li>PIX: chave e QR gerados; expira em 30 minutos.</li>
+      </ul>
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <button class="btn" id="closePayments">Fechar</button>
+      </div>
+      </div>
+    </div>
+  </div>
+  
+<!-- MODAL GESTÃO DE PRODUTOS -->
+<div class="modal" id="productMgmtModal" aria-hidden="true">
+  <div class="sheet" style="width: 90vw; max-width: 1200px; max-height: 90vh; overflow-y: auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <h3>Gestão de Produtos</h3>
+      <button id="btnCloseProductMgmt" style="background:none;border:none;font-size:20px;cursor:pointer">×</button>
+    </div>
+    <div id="productMgmtContent">
+      <!-- Lista de produtos será carregada dinamicamente -->
+    </div>
+    <button class="btn brand" id="btnAddProduct" style="margin-top:12px">Adicionar Produto</button>
+  </div>
+</div>
+
+<!-- MODAL EDIÇÃO/CRIAÇÃO DE PRODUTO -->
+<div class="modal" id="productFormModal" aria-hidden="true">
+  <div class="sheet" style="width: 600px; max-width: 90vw;">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <h3 id="productFormTitle">Adicionar Produto</h3>
+      <button id="btnCloseProductForm" style="background:none;border:none;font-size:20px;cursor:pointer">×</button>
+    </div>
+    <form id="productForm" class="form">
+      <input id="productName" type="text" placeholder="Nome do produto" required>
+      <textarea id="productDescription" placeholder="Descrição do produto" rows="3" required></textarea>
+      <input id="productPrice" type="number" step="0.01" placeholder="Preço (R$)" required>
+      <select id="productCategory" required>
+        <option value="">Selecione uma categoria</option>
+        <option value="Smartphones">Smartphones</option>
+        <option value="Tablets">Tablets</option>
+        <option value="Notebooks">Notebooks</option>
+        <option value="Acessórios">Acessórios</option>
+        <option value="Áudio">Áudio</option>
+        <option value="Gaming">Gaming</option>
+        <option value="Outros Eletrônicos">Outros Eletrônicos</option>
+      </select>
+      <input id="productStock" type="number" placeholder="Estoque inicial (múltiplos de 10)" min="0" step="10" required>
+      <input id="productMaxStock" type="number" placeholder="Limite máximo de estoque (opcional)" min="0" step="10">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <input id="productActive" type="checkbox" checked>
+        <label for="productActive">Produto ativo</label>
+      </div>
+      <div class="err" id="productFormErr"></div>
+      <button type="submit" class="btn brand">Salvar Produto</button>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL CONTROLE DE ESTOQUE -->
+<div class="modal" id="stockModal" aria-hidden="true">
+  <div class="sheet" style="width: 500px;">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <h3>Controle de Estoque</h3>
+      <button id="btnCloseStock" style="background:none;border:none;font-size:20px;cursor:pointer">×</button>
+    </div>
+    <div id="stockContent">
+      <!-- Conteúdo do estoque será carregado dinamicamente -->
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DE CONFIRMAÇÃO -->
+<div class="modal" id="confirmModal" aria-hidden="true">
+  <div class="sheet" style="width: 400px;">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <h3>Confirmar Ação</h3>
+      <button id="btnCloseConfirm" style="background:none;border:none;font-size:20px;cursor:pointer">×</button>
+    </div>
+    <div id="confirmContent">
+      <!-- Conteúdo da confirmação será carregado dinamicamente -->
+    </div>
+    <div style="display: flex; gap: 10px; margin-top: 16px;">
+      <button id="btnConfirmYes" class="btn brand" style="flex: 1;">Confirmar</button>
+      <button id="btnConfirmNo" class="btn" style="flex: 1;">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DE CHECKOUT -->
+<div class="modal" id="checkoutModal" aria-hidden="true">
+  <div class="sheet" style="width: 90vw; max-width: 800px; max-height: 90vh; overflow-y: auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <h3>Finalizar Pedido</h3>
+      <button id="btnCloseCheckout" style="background:none;border:none;font-size:20px;cursor:pointer">×</button>
+    </div>
+    <div id="checkoutContent">
+      <!-- Conteúdo do checkout será carregado dinamicamente -->
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DE ENDEREÇOS -->
+<div class="modal" id="addressModal" aria-hidden="true">
+  <div class="sheet" style="width: 600px; max-width: 90vw;">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <h3>Gerenciar Endereços</h3>
+      <button id="btnCloseAddress" style="background:none;border:none;font-size:20px;cursor:pointer">×</button>
+    </div>
+    <div id="addressContent">
+      <!-- Conteúdo dos endereços será carregado dinamicamente -->
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DE PEDIDOS -->
+<div class="modal" id="ordersModal" aria-hidden="true">
+  <div class="sheet" style="width: 90vw; max-width: 1000px; max-height: 90vh; overflow-y: auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <h3>Meus Pedidos</h3>
+      <button id="btnCloseOrders" style="background:none;border:none;font-size:20px;cursor:pointer">×</button>
+    </div>
+    <div id="ordersContent">
+      <!-- Conteúdo dos pedidos será carregado dinamicamente -->
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DE CANCELAMENTO -->
+<div class="modal" id="cancelModal" aria-hidden="true">
+  <div class="sheet" style="width: 500px;">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <h3>Cancelar Pedido</h3>
+      <button id="btnCloseCancel" style="background:none;border:none;font-size:20px;cursor:pointer">×</button>
+    </div>
+    <div id="cancelContent">
+      <!-- Conteúdo do cancelamento será carregado dinamicamente -->
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DE DEVOLUÇÃO -->
+<div class="modal" id="returnModal" aria-hidden="true">
+  <div class="sheet" style="width: 600px;">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <h3>Solicitar Devolução</h3>
+      <button id="btnCloseReturn" style="background:none;border:none;font-size:20px;cursor:pointer">×</button>
+    </div>
+    <div id="returnContent">
+      <!-- Conteúdo da devolução será carregado dinamicamente -->
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DE ADMINISTRAÇÃO -->
+<div class="modal" id="adminModal" aria-hidden="true">
+  <div class="sheet" style="width: 95vw; max-width: 1400px; max-height: 90vh; overflow-y: auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <h3>Painel Administrativo</h3>
+      <button id="btnCloseAdmin" style="background:none;border:none;font-size:20px;cursor:pointer">×</button>
+    </div>
+    <div id="adminContent">
+      <!-- Conteúdo administrativo será carregado dinamicamente -->
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DE GESTÃO DE USUÁRIOS -->
+<div class="modal" id="usersModal" aria-hidden="true">
+  <div class="sheet" style="width: 90vw; max-width: 1000px; max-height: 90vh; overflow-y: auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <h3>Gestão de Usuários</h3>
+      <button id="btnCloseUsers" style="background:none;border:none;font-size:20px;cursor:pointer">×</button>
+    </div>
+    <div id="usersContent">
+      <!-- Conteúdo de usuários será carregado dinamicamente -->
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DE GESTÃO DE FORNECEDORES -->
+<div class="modal" id="suppliersModal" aria-hidden="true">
+  <div class="sheet" style="width: 90vw; max-width: 1000px; max-height: 90vh; overflow-y: auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <h3>Gestão de Fornecedores</h3>
+      <button id="btnCloseSuppliers" style="background:none;border:none;font-size:20px;cursor:pointer">×</button>
+    </div>
+    <div id="suppliersContent">
+      <!-- Conteúdo de fornecedores será carregado dinamicamente -->
+    </div>
+  </div>
+</div>
+
+<footer>Layout inspirado em marketplace, visual original. Pronto para integrar com sua API em Go.</footer>
+
+<script>
+/* ===== MOCK DATA ===== */
+const state = {
+  products: [
+    {
+      id: 1,
+      title: "iPhone 15 Pro",
+      price: 8999,
+      img: "https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=300&h=300&fit=crop&crop=center&auto=format&q=80",
+      category: "Smartphones",
+      description: "iPhone 15 Pro com chip A17 Pro, câmera de 48MP e tela Super Retina XDR de 6.1\"",
+      free: true,
+      rating: 5,
+      reviews: 127,
+      estoque: 50, 
+      ativo: true, 
+      maxStock: 500
+    },
+    {
+      id: 2,
+      title: "Samsung Galaxy S24",
+      price: 6999,
+      img: "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=300&h=300&fit=crop&crop=center&auto=format&q=80",
+      category: "Smartphones",
+      description: "Galaxy S24 com IA integrada, tela Dynamic AMOLED 2X de 6.2\" e câmera de 50MP",
+      free: true, 
+      estoque: 20, 
+      ativo: true,
+      maxStock: 200,
+      rating: 5,
+      reviews: 89
+    },
+    {
+      id: 3,
+      title: "Xiaomi Redmi Note 13",
+      price: 1299,
+      img: "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=300&h=300&fit=crop&crop=center&auto=format&q=80&random=3",
+      category: "Smartphones",
+      description: "Redmi Note 13 com bateria de 5000mAh, carregamento rápido de 33W e tela AMOLED de 6.67\"",
+      free: false, 
+      estoque: 120, 
+      ativo: true,
+      maxStock: 300,
+      rating: 4,
+      reviews: 156
+    },
+    {
+      id: 4,
+      title: "Google Pixel 8",
+      price: 4999,
+      img: "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=300&h=300&fit=crop&crop=center&auto=format&q=80&random=4",
+      category: "Smartphones",
+      description: "Google Pixel 8 com Tensor G3, câmera de 50MP com Magic Eraser e tela OLED de 6.2\"",
+      free: true, 
+      estoque: 0, 
+      ativo: true,
+      maxStock: 100,
+      rating: 5,
+      reviews: 203
+    },
+    {
+      id: 5,
+      title: "iPad Air 5",
+      price: 3999,
+      img: "https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?w=300&h=300&fit=crop&crop=center&auto=format&q=80",
+      category: "Tablets",
+      description: "iPad Air 5 com chip M1, tela Liquid Retina de 10.9\" e suporte ao Apple Pencil",
+      free: true,
+      estoque: 30,
+      ativo: true,
+      maxStock: 150,
+      rating: 5,
+      reviews: 78
+    },
+    {
+      id: 6,
+      title: "MacBook Pro M3",
+      price: 12999,
+      img: "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=300&h=300&fit=crop&crop=center&auto=format&q=80",
+      category: "Notebooks",
+      description: "MacBook Pro 14\" com chip M3, 16GB RAM e SSD de 512GB",
+      free: true,
+      estoque: 15,
+      ativo: true,
+      maxStock: 50,
+      rating: 5,
+      reviews: 45
+    },
+    {
+      id: 7,
+      title: "AirPods Pro 2",
+      price: 1999,
+      img: "https://images.unsplash.com/photo-1606220945770-b5b6c2c55bf1?w=300&h=300&fit=crop&crop=center&auto=format&q=80",
+      category: "Áudio",
+      description: "AirPods Pro 2 com cancelamento ativo de ruído e áudio espacial",
+      free: true,
+      estoque: 80,
+      ativo: true,
+      maxStock: 200,
+      rating: 5,
+      reviews: 234
+    },
+    {
+      id: 8,
+      title: "PlayStation 5",
+      price: 4499,
+      img: "https://images.unsplash.com/photo-1606813907291-d86efa9b94db?w=300&h=300&fit=crop&crop=center&auto=format&q=80",
+      category: "Gaming",
+      description: "Console PlayStation 5 com SSD de 825GB e controle DualSense",
+      free: false,
+      estoque: 20,
+      ativo: true,
+      maxStock: 100,
+      rating: 5,
+      reviews: 189
+    },
+    {
+      id: 9,
+      title: "Xbox Series X",
+      price: 3999,
+      img: "https://images.unsplash.com/photo-1621259182978-fbf93132d53d?w=300&h=300&fit=crop&crop=center&auto=format&q=80",
+      category: "Gaming",
+      description: "Console Xbox Series X com 1TB de armazenamento e suporte a 4K",
+      free: true,
+      estoque: 15,
+      ativo: true,
+      maxStock: 80,
+      rating: 5,
+      reviews: 156
+    },
+    {
+      id: 10,
+      title: "Nintendo Switch OLED",
+      price: 2499,
+      img: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=300&h=300&fit=crop&crop=center&auto=format&q=80",
+      category: "Gaming",
+      description: "Console Nintendo Switch OLED com tela de 7 polegadas e 64GB de armazenamento",
+      free: true,
+      estoque: 30,
+      ativo: true,
+      maxStock: 120,
+      rating: 5,
+      reviews: 234
+    },
+    {
+      id: 11,
+      title: "Steam Deck 512GB",
+      price: 3299,
+      img: "https://images.unsplash.com/photo-1606813907291-d86efa9b94db?w=300&h=300&fit=crop&crop=center&auto=format&q=80&random=11",
+      category: "Gaming",
+      description: "Console portátil Steam Deck com 512GB de armazenamento e tela tátil de 7 polegadas",
+      free: false,
+      estoque: 10,
+      ativo: true,
+      maxStock: 50,
+      rating: 4,
+      reviews: 98
+    }
+  ],
+  cart:[], users:[], nextUID:1, logged:null, searchTerm:"", selectedCategory:"", selectedBrand:"", sort:"",
+  view:"shop",
+  pm:{q:"", cat:"", sort:"price_asc", page:1, pageSize:5},
+  orders:[], addresses:[], nextOrderId:1,
+  suppliers:[], nextSupplierId:1
+};
+const el = s=>document.querySelector(s);
+const money = v=>v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+
+/* ===== RENDER PRODUTOS ===== */
+function renderList(){
+  const grid = el('#cards'); grid.innerHTML="";
+  const filteredProducts = getFilteredProducts();
+  
+  if(filteredProducts.length === 0) {
+    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--mut)">Nenhum produto encontrado</div>';
+    return;
+  }
+  
+  filteredProducts.forEach(p=>{
+    const card = document.createElement('div'); card.className="card";
+    card.innerHTML = `
+      <div class="thumb" style="background-image:url('${p.img}');background-size:cover;background-position:center;cursor:pointer" onclick="showProductDetails(${p.id})"></div>
+      <div class="ci">
+        <div class="price">${money(p.price)}</div>
+        <div class="sub">${p.title}</div>
+        <div style="display:flex;align-items:center;gap:4px;font-size:12px;color:var(--mut)">
+          <span>⭐ ${p.rating}</span>
+          <span>(${p.reviews})</span>
+        </div>
+        ${p.free ? '<span class="pill">Frete grátis</span>':''}
+        <button class="btn brand">Adicionar ao carrinho</button>
+      </div>`;
+    card.querySelector('.btn.brand').onclick = ()=>{ addToCart(p); };
+    grid.appendChild(card);
+  });
+}
+
+function getFilteredProducts() {
+  let filtered = state.products.filter(p => p.ativo); // Apenas produtos ativos na loja
+  
+  if(state.searchTerm) {
+    filtered = filtered.filter(p => 
+      p.title.toLowerCase().includes(state.searchTerm.toLowerCase()) ||
+      p.description.toLowerCase().includes(state.searchTerm.toLowerCase())
+    );
+  }
+  
+  if(state.selectedCategory) {
+    filtered = filtered.filter(p => p.category === state.selectedCategory);
+  }
+  
+  if(state.selectedBrand) {
+    filtered = filtered.filter(p => p.title.toLowerCase().includes(state.selectedBrand.toLowerCase()));
+  }
+  
+  if(state.sort === 'best'){
+    filtered = [...filtered].sort((a,b)=> b.reviews - a.reviews);
+  }
+  
+  return filtered;
+}
+
+/* ===== CART ===== */
+function openCart(){ el('#drawer').classList.add('open'); renderCart(); }
+function closeCart(){ el('#drawer').classList.remove('open'); }
+function addToCart(prod){ 
+  // Verificar se o produto está ativo e tem estoque
+  if (!prod.ativo) {
+    alert('Este produto não está disponível no momento.');
+    return;
+  }
+  
+  if (prod.estoque <= 0) {
+    alert('Produto fora de estoque.');
+    return;
+  }
+  
+  const existing = state.cart.find(item => item.id === prod.id);
+  if(existing) {
+    // Verificar se não excede o estoque disponível
+    if (existing.qty >= prod.estoque) {
+      alert(`Quantidade máxima disponível: ${prod.estoque} unidades`);
+      return;
+    }
+    existing.qty += 1;
+  } else {
+    state.cart.push({...prod, qty:1}); 
+  }
+  updateCartCount(); 
+  openCart(); 
+}
+function updateCartCount(){ 
+  const totalItems = state.cart.reduce((sum, item) => sum + item.qty, 0);
+  el('#cartCount').textContent = totalItems; 
+}
+function renderCart(){
+  const box = el('#cartItems'); box.innerHTML="";
+  let tot=0;
+  
+  if(state.cart.length === 0) {
+    box.innerHTML = '<div style="text-align:center;padding:20px;color:var(--mut)">Carrinho vazio</div>';
+    el('#cartTotal').textContent = money(0);
+    const chk = el('#checkoutBtn'); if(chk) chk.disabled = true;
+    return;
+  }
+  
+  state.cart.forEach((it,idx)=>{
+    tot += it.price*it.qty;
+    const row = document.createElement('div'); row.className="cart-item";
+    row.innerHTML = `
+      <div style="background-image:url('${it.img}');background-size:cover;background-position:center;border-radius:8px;height:64px"></div>
+      <div>
+        <div>${it.title}</div>
+        <small class="sub">${money(it.price)}</small>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:4px">
+          <button onclick="updateQuantity(${idx}, -1)" style="width:24px;height:24px;border-radius:50%;border:1px solid var(--line);background:#fff">-</button>
+          <span>${it.qty}</span>
+          <button onclick="updateQuantity(${idx}, 1)" style="width:24px;height:24px;border-radius:50%;border:1px solid var(--line);background:#fff">+</button>
+        </div>
+      </div>
+      <button class="btn" data-i="${idx}" onclick="removeFromCart(${idx})">Remover</button>`;
+    box.appendChild(row);
+  });
+  el('#cartTotal').textContent = money(tot);
+  const chk = el('#checkoutBtn'); 
+  if(chk) {
+    chk.disabled = tot<=0;
+    chk.onclick = () => {
+      if (state.cart.length === 0) {
+        alert('Adicione pelo menos 1 produto ao carrinho.');
+        return;
+      }
+      closeCart();
+      showCheckout();
+    };
+  }
+}
+
+function updateQuantity(index, change) {
+  state.cart[index].qty += change;
+  if(state.cart[index].qty <= 0) {
+    state.cart.splice(index, 1);
+  }
+  updateCartCount();
+  renderCart();
+}
+
+function removeFromCart(index) {
+  state.cart.splice(index, 1);
+  updateCartCount();
+  renderCart();
+}
+
+/* ===== PRODUCT DETAILS ===== */
+function showProductDetails(productId) {
+  const product = state.products.find(p => p.id === productId);
+  if(!product) return;
+  
+  el('#productTitle').textContent = product.title;
+  el('#productContent').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start">
+      <div style="aspect-ratio:1/1;background-image:url('${product.img}');background-size:cover;background-position:center;border-radius:12px"></div>
+      <div>
+        <div style="font-size:24px;font-weight:900;margin-bottom:8px">${money(product.price)}</div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+          <span>⭐ ${product.rating}</span>
+          <span style="color:var(--mut)">(${product.reviews} avaliações)</span>
+        </div>
+        <div style="margin-bottom:12px">
+          <strong>Categoria:</strong> ${product.category}
+        </div>
+        <div style="margin-bottom:12px">
+          <strong>Descrição:</strong><br>
+          ${product.description}
+        </div>
+        ${product.free ? '<span class="pill">Frete grátis</span>':''}
+      </div>
+    </div>
+  `;
+  
+  el('#btnAddToCart').onclick = () => {
+    addToCart(product);
+    hideProductDetails();
+  };
+  
+  el('#productModal').classList.add('show');
+}
+
+function hideProductDetails() {
+  el('#productModal').classList.remove('show');
+}
+
+/* ===== SEARCH & FILTERS ===== */
+function performSearch() {
+  state.searchTerm = el('#q').value.trim();
+  renderList();
+}
+
+function filterByCategory(category) {
+  state.selectedCategory = category;
+  state.selectedBrand = ""; // Limpa filtro de marca
+  
+  // Atualizar classes visuais
+  document.querySelectorAll('.nav a').forEach(link => link.classList.remove('active'));
+  if (category) {
+    const activeLink = document.querySelector(`.nav a[onclick="filterByCategory('${category}')"]`);
+    if (activeLink) activeLink.classList.add('active');
+  } else {
+    const allLink = document.querySelector('.nav a[onclick="filterByCategory(\'\')"]');
+    if (allLink) allLink.classList.add('active');
+  }
+  
+  renderList();
+}
+
+function filterByBrand(brand) {
+  state.selectedBrand = brand;
+  state.selectedCategory = ""; // Limpa filtro de categoria
+  
+  // Atualizar classes visuais
+  document.querySelectorAll('.nav a').forEach(link => link.classList.remove('active'));
+  const activeLink = document.querySelector(`.nav a[onclick="filterByBrand('${brand}')"]`);
+  if (activeLink) activeLink.classList.add('active');
+  
+  renderList();
+}
+
+/* ===== PROD MGMT ===== */
+function setView(v){
+  state.view = v;
+  const pm = el('#pmSection');
+  const mainShopParts = [document.querySelector('section.hero'), document.querySelector('section.shortcuts'), document.querySelector('main.wrap')];
+  if(v==='pm'){
+    pm.style.display='block';
+    mainShopParts.forEach(x=>{ if(x) x.style.display='none'; });
+    pmRender();
+  } else {
+    pm.style.display='none';
+    mainShopParts.forEach(x=>{ if(x) x.style.display=''; });
+  }
+}
+function pmCategories(){
+  const cats = Array.from(new Set(state.products.map(p=>p.category))).sort();
+  return [''].concat(cats);
+}
+function pmApplyFilters(products){
+  const {q, cat, sort} = state.pm;
+  let list = products;
+  if(q){ list = list.filter(p => p.title.toLowerCase().includes(q.toLowerCase())); }
+  if(cat){ list = list.filter(p => p.category===cat); }
+  if(sort==='price_asc') list = [...list].sort((a,b)=>a.price-b.price);
+  if(sort==='price_desc') list = [...list].sort((a,b)=>b.price-a.price);
+  if(sort==='stock_desc') list = [...list].sort((a,b)=>b.estoque-a.estoque);
+  if(sort==='stock_asc') list = [...list].sort((a,b)=>a.estoque-b.estoque);
+  return list;
+}
+function pmRender(){
+  // fill category select once
+  const catSel = el('#pmCat');
+  if(catSel && !catSel.dataset.filled){
+    pmCategories().forEach(c=>{ const o=document.createElement('option'); o.value=c; o.textContent=c||'Todas categorias'; catSel.appendChild(o); });
+    catSel.dataset.filled='1';
+  }
+  const {page,pageSize} = state.pm;
+  const list = pmApplyFilters(state.products);
+  const totalPages = Math.max(1, Math.ceil(list.length/pageSize));
+  if(state.pm.page>totalPages) state.pm.page = totalPages;
+  const start = (state.pm.page-1)*pageSize;
+  const pageItems = list.slice(start, start+pageSize);
+  const rows = el('#pmRows'); rows.innerHTML="";
+  if(pageItems.length===0){ rows.innerHTML = '<div style="padding:16px;color:var(--mut)">Nenhum produto encontrado</div>'; }
+  pageItems.forEach(p=>{
+    const r = document.createElement('div');
+    r.style.display='grid';
+    r.style.gridTemplateColumns='2fr 1fr 1fr 1fr 1fr';
+    r.style.gap='0';
+    r.style.alignItems='center';
+    r.style.borderTop='1px solid var(--line)';
+    r.style.padding='10px 12px';
+    const disabled = !p.ativo;
+    r.innerHTML = `
+      <div>${p.title}</div>
+      <div>${p.category}</div>
+      <div>${money(p.price)}</div>
+      <div>${p.estoque}</div>
+      <div style="display:flex;gap:6px;align-items:center;justify-content:flex-start">
+        <select data-id="${p.id}" class="pmLot" style="padding:8px;border:1px solid var(--line);border-radius:8px;background:#fff" ${disabled?'disabled':''}>
+          ${[10,20,30,40,50].map(v=>`<option value="${v}">${v}</option>`).join('')}
+        </select>
+        <button class="btn brand" data-add="${p.id}" ${disabled?'disabled':''}>Adicionar</button>
+      </div>`;
+    const btn = r.querySelector('button[data-add]');
+    btn.onclick = ()=>{
+      const lotSel = r.querySelector('select.pmLot');
+      const amount = parseInt(lotSel.value,10);
+      pmOpenConfirm(p.id, amount);
+    };
+    rows.appendChild(r);
+  });
+  el('#pmPage').textContent = `${state.pm.page}/${totalPages}`;
+  el('#pmPrev').disabled = state.pm.page<=1;
+  el('#pmNext').disabled = state.pm.page>=totalPages;
+}
+function pmOpenConfirm(prodId, amount){
+  const p = state.products.find(x=>x.id===prodId);
+  if(!p) return;
+  if(!Number.isInteger(amount) || amount<=0 || amount%10!==0){ alert('Acréscimo deve ser em lotes de 10 (10, 20, 30…)'); return; }
+  if(!p.ativo){ alert('Produto inativo: não é possível ajustar estoque'); return; }
+  const next = p.estoque + amount;
+  if(typeof p.maxStock==='number' && next>p.maxStock){ alert(`Operação ultrapassa o limite de estoque (máx. ${p.maxStock}).`); return; }
+  if(!el('#pmConfirmModal')){
+    const modal = document.createElement('div'); modal.className='modal'; modal.id='pmConfirmModal'; modal.innerHTML = `
+      <div class="sheet" style="max-width:520px">
+        <h3>Confirmar ajuste</h3>
+        <div id="pmConfirmText"></div>
+        <div style="display:flex;gap:8px;margin-top:12px">
+          <button class="btn brand" id="pmDoConfirm">Confirmar</button>
+          <button class="btn" id="pmCancelConfirm">Cancelar</button>
+        </div>
+      </div>`;
+    document.body.appendChild(modal);
+  }
+  el('#pmConfirmText').textContent = `Adicionar +${amount} ao estoque de "${p.title}"?`;
+  el('#pmConfirmModal').classList.add('show');
+  el('#pmCancelConfirm').onclick = ()=> el('#pmConfirmModal').classList.remove('show');
+  el('#pmDoConfirm').onclick = ()=> pmConfirmProceed(prodId, amount);
+}
+function pmConfirmProceed(prodId, amount){
+  const p = state.products.find(x=>x.id===prodId);
+  if(!p) return;
+  // validações finais
+  if(!p.ativo){ alert('Produto inativo: não é possível ajustar estoque'); return; }
+  if(!Number.isInteger(amount) || amount<=0 || amount%10!==0){ alert('Acréscimo deve ser em lotes de 10 (10, 20, 30…)'); return; }
+  const next = p.estoque + amount;
+  if(typeof p.maxStock==='number' && next>p.maxStock){ alert(`Operação ultrapassa o limite de estoque (máx. ${p.maxStock}).`); return; }
+  // aplica
+  p.estoque = next;
+  el('#pmConfirmModal').classList.remove('show');
+  alert('Estoque atualizado com sucesso');
+  pmRender();
+}
+
+/* ===== AUTH (regras) ===== */
+function showAuth(){ el('#authModal').classList.add('show'); }
+function hideAuth(){ el('#authModal').classList.remove('show'); el('#aErr').textContent=""; }
+function validPass(p){ 
+  // Mínimo 10 caracteres
+  if(p.length < 10) return false;
+  
+  // Deve conter pelo menos um número
+  if(!/\d/.test(p)) return false;
+  
+  // Deve conter pelo menos uma letra (maiúscula ou minúscula)
+  if(!/[a-zA-Z]/.test(p)) return false;
+  
+  // Deve conter pelo menos um caractere especial
+  if(!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(p)) return false;
+  
+  return true;
+}
+function uniqueEmail(email){ return !state.users.some(u=>u.email.toLowerCase()===email.toLowerCase()); }
+
+// auth mode controller
+let authMode = 'signup'; // 'login' | 'signup'
+function setAuthMode(mode){
+  authMode = mode;
+  const nome = el('#aNome');
+  const btnLogin = el('#btnLogin');
+  const btnSignup = el('#btnSignup');
+  const title = el('#authTitle');
+  if(mode === 'login'){
+    if(nome) nome.style.display = 'none';
+    if(btnLogin) btnLogin.style.display = '';
+    if(btnSignup) btnSignup.style.display = 'none';
+    if(title) title.textContent = 'Entrar';
+  } else {
+    if(nome) nome.style.display = '';
+    if(btnLogin) btnLogin.style.display = 'none';
+    if(btnSignup) btnSignup.style.display = '';
+    if(title) title.textContent = 'Criar conta';
+  }
+}
+function doSignup(){
+  const nome = el('#aNome').value.trim();
+  const email = el('#aEmail').value.trim();
+  const pass = el('#aSenha').value;
+  const perfil = el('#aPerfil').value;
+  if(!nome || !email || !pass){ el('#aErr').textContent="Preencha nome, e-mail e senha."; return; }
+  if(!validPass(pass)){ el('#aErr').textContent="Senha deve ter pelo menos 10 caracteres, incluindo números, letras e caracteres especiais."; return; }
+  if(!uniqueEmail(email)){ el('#aErr').textContent="E-mail já cadastrado."; return; }
+  state.users.push({id:state.nextUID++, nome, email, perfil});
+  alert("Conta criada! Faça login.");
+  hideAuth();
+}
+function doLogin(){
+  const email = el('#aEmail').value.trim();
+  const pass = el('#aSenha').value;
+  const u = state.users.find(x=>x.email.toLowerCase()===email.toLowerCase());
+  if(!u || !validPass(pass)){ el('#aErr').textContent="E-mail ou senha incorretos. Senha deve ter pelo menos 10 caracteres, incluindo números, letras e caracteres especiais."; return; }
+  state.logged = u;
+  hideAuth();
+  updateLoginUI();
+  alert(`Bem-vindo(a), ${u.nome}!`);
+}
+
+// Função para atualizar interface de login
+function updateLoginUI() {
+  const btnCreate = el('#btnCreate');
+  const ordersLink = el('#ordersLink');
+  const adminLink = el('#adminLink');
+  const logoutLink = el('#logoutLink');
+  
+  if (state.logged) {
+    // Usuário logado
+    if (btnCreate) btnCreate.style.display = 'none';
+    if (ordersLink) ordersLink.style.display = 'block';
+    if (logoutLink) logoutLink.style.display = 'block';
+    
+    // Mostrar painel admin apenas para administradores
+    if (adminLink) {
+      if (state.logged.perfil === 'admin') {
+        adminLink.style.display = 'block';
+      } else {
+        adminLink.style.display = 'none';
+      }
+    }
+    
+    // Atualizar texto do link de pedidos
+    if (ordersLink) {
+      if (state.logged.perfil === 'admin') {
+        ordersLink.innerHTML = 'Meus Pedidos <small style="color:var(--mut)">(Admin)</small>';
+      } else {
+        ordersLink.innerHTML = 'Meus Pedidos';
+      }
+    }
+  } else {
+    // Usuário não logado
+    if (btnCreate) btnCreate.style.display = 'block';
+    if (ordersLink) ordersLink.style.display = 'none';
+    if (adminLink) adminLink.style.display = 'none';
+    if (logoutLink) logoutLink.style.display = 'none';
+  }
+}
+
+// Função para logout
+function logout() {
+  state.logged = null;
+  state.cart = [];
+  state.addresses = [];
+  state.selectedAddress = null;
+  updateCartCount();
+  updateLoginUI();
+  alert('Logout realizado com sucesso!');
+}
+
+
+/* ===== EVENTS ===== */
+document.addEventListener('DOMContentLoaded', ()=>{
+  // seed admin
+  state.users.push({id:state.nextUID++, nome:"Admin", email:"admin@e2e.dev", perfil:"admin"});
+  
+  // Destacar filtro "Todos" como ativo por padrão
+  const allLink = document.querySelector('.nav a[onclick="filterByCategory(\'\')"]');
+  if (allLink) allLink.classList.add('active');
+  
+  renderList();
+  
+  // busca
+  el('#q').addEventListener('keypress', (e) => {
+    if(e.key === 'Enter') performSearch();
+  });
+  el('#q').addEventListener('input', (e)=>{
+    // simples feedback de mínimo 2 caracteres
+    const v = e.target.value.trim();
+    if(v && v.length<2){ e.target.style.borderColor = '#b42318'; }
+    else { e.target.style.borderColor = 'var(--line)'; }
+  });
+  
+  // carrinho
+  el('#cartBtn').onclick = openCart;
+  el('#closeDrawer').onclick = closeCart;
+  
+  // auth
+  el('#btnCreate').onclick = (e)=>{ e.preventDefault(); setAuthMode('signup'); showAuth(); }
+  el('#tileLogin').onclick = (e)=>{ e.preventDefault(); setAuthMode('login'); showAuth(); }
+  el('#btnCloseAuth').onclick = hideAuth;
+  el('#btnSignup').onclick = doSignup;
+  el('#btnLogin').onclick = doLogin;
+  
+  // PM nav
+  const pmLink = el('#pmLink'); if(pmLink){ pmLink.onclick = (e)=>{ e.preventDefault(); setView('pm'); } }
+  const pmBack = el('#pmBack'); if(pmBack){ pmBack.onclick = ()=> setView('shop'); }
+  el('#pmQ').addEventListener('input', (e)=>{ state.pm.q = e.target.value.trim(); state.pm.page=1; pmRender(); });
+  el('#pmCat').addEventListener('change', (e)=>{ state.pm.cat = e.target.value; state.pm.page=1; pmRender(); });
+  el('#pmSort').addEventListener('change', (e)=>{ state.pm.sort = e.target.value; pmRender(); });
+  el('#pmPrev').onclick = ()=>{ if(state.pm.page>1){ state.pm.page--; pmRender(); } };
+  el('#pmNext').onclick = ()=>{ state.pm.page++; pmRender(); };
+  
+  // CEP inline handlers (mask + validação)
+  const cepInput = el('#cepInput');
+  const cepMsg = el('#cepMsg');
+  const cepForm = el('#cepForm');
+  const formatCep = (digits)=> digits.length>5 ? `${digits.slice(0,5)}-${digits.slice(5,8)}` : digits;
+  cepInput.addEventListener('input', ()=>{
+    const only = cepInput.value.replace(/\D/g,'').slice(0,8);
+    cepInput.value = formatCep(only);
+    if(only.length===8){ cepInput.style.borderColor = '#16a34a'; cepMsg.textContent = ''; }
+    else if(only.length>0){ cepInput.style.borderColor = '#b42318'; cepMsg.textContent = 'CEP deve ter 8 dígitos'; cepMsg.style.color = '#b42318'; }
+    else { cepInput.style.borderColor = 'var(--line)'; cepMsg.textContent = ''; }
+  });
+  el('#cepSave').onclick = ()=>{
+    const only = cepInput.value.replace(/\D/g,'');
+    if(only.length!==8){ alert('CEP inválido. Use 8 dígitos.'); return; }
+    cepMsg.textContent = `CEP salvo: ${formatCep(only)}`; cepMsg.style.color = '#084c2e';
+  };
+  const tileCep = el('#tileCep'); if(tileCep) tileCep.onclick = (e)=>{ e.preventDefault(); cepInput.focus(); };
+  
+  // Mais vendidos handlers
+  const navBest = Array.from(document.querySelectorAll('.nav a')).find(a=>a.textContent.includes('Mais vendidos'));
+  if(navBest){ navBest.onclick = (e)=>{ e.preventDefault(); state.sort='best'; renderList(); } }
+  const tileBest = el('#tileBest'); if(tileBest){ tileBest.onclick = (e)=>{ e.preventDefault(); state.sort='best'; renderList(); } }
+  
+  // product modal
+  el('#btnCloseProduct').onclick = hideProductDetails;
+  const paymentsTile = Array.from(document.querySelectorAll('.tile')).find(t=>t.textContent.includes('Meios de pagamento'));
+  if(paymentsTile){ paymentsTile.onclick = (e)=>{ e.preventDefault(); el('#paymentsModal').classList.add('show'); } }
+  const closePayments = el('#closePayments'); if(closePayments){ closePayments.onclick = ()=> el('#paymentsModal').classList.remove('show'); }
+  
+  // close modals on outside click
+  el('#authModal').onclick = (e) => {
+    if(e.target === el('#authModal')) hideAuth();
+  };
+  el('#productModal').onclick = (e) => {
+    if(e.target === el('#productModal')) hideProductDetails();
+  };
+  
+  // Sistema de Gestão de Produtos
+  initializeProductManagement();
+  
+  // Inicializar interface de login
+  updateLoginUI();
+});
+
+/* ===== SISTEMA DE GESTÃO DE PRODUTOS ===== */
+
+// Função para gerar imagem baseada nas características do produto
+function generateProductImage(product) {
+  const { category, name } = product;
+  const imageMap = {
+    'Smartphones': '📱',
+    'Tablets': '📱',
+    'Notebooks': '💻',
+    'Acessórios': '🎧',
+    'Áudio': '🔊',
+    'Gaming': '🎮',
+    'Outros Eletrônicos': '⚡'
+  };
+  
+  const emoji = imageMap[category] || '⚡';
+  const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#feca57', '#ff9ff3', '#54a0ff', '#5f27cd', '#ff4757', '#2ed573'];
+  const color = colors[Math.abs(name.split('').reduce((a, b) => a + b.charCodeAt(0), 0)) % colors.length];
+  
+  return { emoji, color, text: name.substring(0, 2).toUpperCase() };
+}
+
+// Função para validar se o valor é múltiplo de 10
+function isValidStockIncrement(value) {
+  return value > 0 && value % 10 === 0;
+}
+
+// Função para mostrar modal de gestão de produtos
+function showProductMgmt() {
+  el('#productMgmtModal').classList.add('show');
+  renderProductList();
+}
+
+function hideProductMgmt() {
+  el('#productMgmtModal').classList.remove('show');
+}
+
+// Renderiza lista de produtos
+function renderProductList() {
+  const products = state.products;
+  let html = `
+    <div style="margin-bottom: 20px;">
+      <h4>Total de produtos: ${products.length}</h4>
+    </div>
+    <table class="products-table">
+      <thead>
+        <tr>
+          <th>Imagem</th>
+          <th>Nome</th>
+          <th>Categoria</th>
+          <th>Preço</th>
+          <th>Estoque</th>
+          <th>Status</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+  `;
+  
+  products.forEach((product, index) => {
+    const imageData = generateProductImage(product);
+    const statusClass = product.ativo ? 'active' : 'inactive';
+    const statusText = product.ativo ? 'Ativo' : 'Inativo';
+    
+    html += `
+      <tr>
+        <td>
+          <div class="product-image" style="background: ${imageData.color}; display: flex; align-items: center; justify-content: center; font-size: 24px;">
+            ${imageData.emoji}
+          </div>
+        </td>
+        <td class="product-name">${product.title}</td>
+        <td><span class="category">${product.category}</span></td>
+        <td class="product-price">${money(product.price)}</td>
+        <td class="product-stock">${product.estoque} unidades</td>
+        <td><span class="status ${statusClass}">${statusText}</span></td>
+        <td class="product-actions-cell">
+          <button class="btn" onclick="editProduct(${index})">Editar</button>
+          <button class="btn" onclick="manageStock(${index})">Estoque</button>
+          <button class="btn" onclick="toggleProductStatus(${index})">${product.ativo ? 'Desativar' : 'Ativar'}</button>
+          <button class="btn" onclick="confirmDeleteProduct(${index})" style="background: #ef4444; color: white;">Excluir</button>
+        </td>
+      </tr>
+    `;
+  });
+  
+  html += '</tbody></table>';
+  el('#productMgmtContent').innerHTML = html;
+}
+
+// Função para mostrar formulário de produto
+function showProductForm(productIndex = null) {
+  const isEdit = productIndex !== null;
+  el('#productFormTitle').textContent = isEdit ? 'Editar Produto' : 'Adicionar Produto';
+  
+  if (isEdit) {
+    const product = state.products[productIndex];
+    el('#productName').value = product.title;
+    el('#productDescription').value = product.description;
+    el('#productPrice').value = product.price;
+    el('#productCategory').value = product.category;
+    el('#productStock').value = product.estoque;
+    el('#productMaxStock').value = product.maxStock || '';
+    el('#productActive').checked = product.ativo;
+  } else {
+    el('#productForm').reset();
+  }
+  
+  el('#productFormModal').classList.add('show');
+  el('#productForm').dataset.productIndex = productIndex;
+}
+
+function hideProductForm() {
+  el('#productFormModal').classList.remove('show');
+  el('#productForm').reset();
+  el('#productFormErr').textContent = '';
+}
+
+// Função para salvar produto
+function saveProduct(event) {
+  event.preventDefault();
+  
+  const productIndex = el('#productForm').dataset.productIndex;
+  const isEdit = productIndex !== null && productIndex !== 'null';
+  
+  const name = el('#productName').value.trim();
+  const description = el('#productDescription').value.trim();
+  const price = parseFloat(el('#productPrice').value);
+  const category = el('#productCategory').value;
+  const stock = parseInt(el('#productStock').value);
+  const maxStock = el('#productMaxStock').value ? parseInt(el('#productMaxStock').value) : null;
+  const active = el('#productActive').checked;
+  
+  // Validações
+  if (!name || !description || !price || !category || stock === null) {
+    el('#productFormErr').textContent = 'Preencha todos os campos obrigatórios.';
+    return;
+  }
+  
+  if (price <= 0) {
+    el('#productFormErr').textContent = 'O preço deve ser maior que zero.';
+    return;
+  }
+  
+  if (!isValidStockIncrement(stock)) {
+    el('#productFormErr').textContent = 'O estoque deve ser um múltiplo de 10.';
+    return;
+  }
+  
+  if (maxStock && !isValidStockIncrement(maxStock)) {
+    el('#productFormErr').textContent = 'O limite máximo de estoque deve ser um múltiplo de 10.';
+    return;
+  }
+  
+  if (maxStock && stock > maxStock) {
+    el('#productFormErr').textContent = 'O estoque inicial não pode ser maior que o limite máximo.';
+    return;
+  }
+  
+  const product = {
+    id: isEdit ? state.products[productIndex].id : Date.now(),
+    title: name,
+    description,
+    price,
+    category,
+    estoque: stock,
+    maxStock,
+    ativo: active,
+    free: true,
+    rating: 5,
+    reviews: 0,
+    img: "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=300&h=300&fit=crop&crop=center&auto=format&q=80"
+  };
+  
+  if (isEdit) {
+    state.products[productIndex] = product;
+  } else {
+    state.products.push(product);
+  }
+  
+  hideProductForm();
+  renderProductList();
+  renderList(); // Atualiza a grid principal também
+}
+
+// Função para editar produto
+function editProduct(index) {
+  showProductForm(index);
+}
+
+// Função para gerenciar estoque
+function manageStock(productIndex) {
+  const product = state.products[productIndex];
+  
+  if (!product.ativo) {
+    alert('Produtos inativos não podem receber acréscimo de estoque.');
+    return;
+  }
+  
+  el('#stockModal').classList.add('show');
+  
+  const imageData = generateProductImage(product);
+  el('#stockContent').innerHTML = `
+    <div class="stock-control">
+      <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+        <div class="product-image" style="background: ${imageData.color}; display: flex; align-items: center; justify-content: center; font-size: 24px; width: 60px; height: 60px;">
+          ${imageData.emoji}
+        </div>
+        <div>
+          <h4 style="margin: 0 0 4px 0;">${product.title}</h4>
+          <p style="margin: 0; color: var(--mut); font-size: 14px;">${product.category}</p>
+        </div>
+      </div>
+      
+      <div class="stock-info">
+        <div>
+          <strong>Estoque atual:</strong> ${product.estoque} unidades
+        </div>
+        ${product.maxStock ? `<div><strong>Limite máximo:</strong> ${product.maxStock} unidades</div>` : ''}
+      </div>
+      
+      <div class="stock-input">
+        <label for="stockIncrement">Acréscimo (múltiplos de 10):</label>
+        <input type="number" id="stockIncrement" min="10" step="10" value="10" placeholder="10, 20, 30...">
+        <button class="btn brand" onclick="addStock(${productIndex})">Adicionar</button>
+      </div>
+      
+      <div class="stock-buttons">
+        <button class="btn" onclick="addStock(${productIndex}, 10)">+10</button>
+        <button class="btn" onclick="addStock(${productIndex}, 20)">+20</button>
+        <button class="btn" onclick="addStock(${productIndex}, 50)">+50</button>
+        <button class="btn" onclick="addStock(${productIndex}, 100)">+100</button>
+      </div>
+      
+      <div class="err" id="stockErr" style="margin-top: 12px;"></div>
+    </div>
+  `;
+}
+
+function hideStockModal() {
+  el('#stockModal').classList.remove('show');
+}
+
+// Função para adicionar estoque
+function addStock(productIndex, increment = null) {
+  const product = state.products[productIndex];
+  
+  if (!product.ativo) {
+    el('#stockErr').textContent = 'Produtos inativos não podem receber acréscimo de estoque.';
+    return;
+  }
+  
+  const stockIncrement = increment || parseInt(el('#stockIncrement').value);
+  
+  if (!isValidStockIncrement(stockIncrement)) {
+    el('#stockErr').textContent = 'O acréscimo deve ser um múltiplo de 10 (10, 20, 30...).';
+    return;
+  }
+  
+  if (product.maxStock && (product.estoque + stockIncrement) > product.maxStock) {
+    el('#stockErr').textContent = `O acréscimo ultrapassaria o limite máximo de ${product.maxStock} unidades.`;
+    return;
+  }
+  
+  // Mostrar modal de confirmação
+  showConfirmModal(
+    `Confirmar acréscimo de ${stockIncrement} unidades?`,
+    `Estoque atual: ${product.estoque} unidades\nApós acréscimo: ${product.estoque + stockIncrement} unidades`,
+    () => {
+      // Executar acréscimo
+      product.estoque += stockIncrement;
+      
+      // Atualizar interfaces
+      renderProductList();
+      renderList();
+      manageStock(productIndex); // Recarrega o modal de estoque
+      
+      alert(`Estoque atualizado com sucesso!\nNovo estoque: ${product.estoque} unidades`);
+    }
+  );
+}
+
+// Função para alternar status do produto
+function toggleProductStatus(productIndex) {
+  const product = state.products[productIndex];
+  const newStatus = !product.ativo;
+  
+  showConfirmModal(
+    `${newStatus ? 'Ativar' : 'Desativar'} produto?`,
+    `O produto "${product.title}" será ${newStatus ? 'ativado' : 'desativado'}.`,
+    () => {
+      product.ativo = newStatus;
+      renderProductList();
+      renderList();
+    }
+  );
+}
+
+// Função para confirmar exclusão de produto
+function confirmDeleteProduct(productIndex) {
+  const product = state.products[productIndex];
+  
+  showConfirmModal(
+    'Excluir produto?',
+    `Tem certeza que deseja excluir o produto "${product.title}"?\nEsta ação não pode ser desfeita.`,
+    () => {
+      deleteProduct(productIndex);
+    }
+  );
+}
+
+// Função para excluir produto
+function deleteProduct(productIndex) {
+  state.products.splice(productIndex, 1);
+  renderProductList();
+  renderList();
+}
+
+// Função para mostrar modal de confirmação
+function showConfirmModal(title, message, onConfirm) {
+  el('#confirmContent').innerHTML = `
+    <h4>${title}</h4>
+    <p style="white-space: pre-line; margin: 12px 0;">${message}</p>
+  `;
+  
+  el('#confirmModal').classList.add('show');
+  
+  // Remover listeners anteriores
+  const confirmBtn = el('#btnConfirmYes');
+  const cancelBtn = el('#btnConfirmNo');
+  const newConfirmBtn = confirmBtn.cloneNode(true);
+  const newCancelBtn = cancelBtn.cloneNode(true);
+  confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
+  cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
+  
+  newConfirmBtn.onclick = () => {
+    hideConfirmModal();
+    onConfirm();
+  };
+  
+  newCancelBtn.onclick = hideConfirmModal;
+}
+
+function hideConfirmModal() {
+  el('#confirmModal').classList.remove('show');
+}
+
+// Inicialização do sistema de gestão de produtos
+function initializeProductManagement() {
+  // Event listeners para modais
+  el('#btnCloseProductMgmt').onclick = hideProductMgmt;
+  el('#btnCloseProductForm').onclick = hideProductForm;
+  el('#btnCloseStock').onclick = hideStockModal;
+  el('#btnCloseConfirm').onclick = hideConfirmModal;
+  el('#btnCloseCheckout').onclick = hideCheckout;
+  el('#btnCloseAddress').onclick = hideAddressModal;
+  el('#btnCloseOrders').onclick = hideOrdersModal;
+  el('#btnCloseCancel').onclick = hideCancelModal;
+  el('#btnCloseReturn').onclick = hideReturnModal;
+  el('#btnCloseAdmin').onclick = hideAdminModal;
+  el('#btnCloseUsers').onclick = hideUsersModal;
+  el('#btnCloseSuppliers').onclick = hideSuppliersModal;
+
+  // Event listener para formulário de produto
+  el('#productForm').onsubmit = saveProduct;
+
+  // Event listener para botão de adicionar produto
+  el('#btnAddProduct').onclick = () => showProductForm();
+
+  // Event listener para link de gestão de produtos
+  el('#productMgmtLink').onclick = function(e) {
+    e.preventDefault();
+    const session = state.logged;
+    if (session && session.perfil === 'admin') {
+      showProductMgmt();
+    } else {
+      alert('Acesso restrito a administradores.');
+    }
+  };
+
+  // Event listener para link de pedidos
+  el('#ordersLink').onclick = function(e) {
+    e.preventDefault();
+    showOrders();
+  };
+
+  // Event listener para logout
+  el('#logoutLink').onclick = function(e) {
+    e.preventDefault();
+    logout();
+  };
+
+  // Event listener para painel administrativo
+  el('#adminLink').onclick = function(e) {
+    e.preventDefault();
+    if (state.logged && state.logged.perfil === 'admin') {
+      showAdminPanel();
+    } else {
+      alert('Acesso restrito a administradores.');
+    }
+  };
+
+  // Event listener para formulário de endereço
+  el('#newAddressForm').onsubmit = saveAddress;
+  
+  // Event listeners para formulários administrativos
+  el('#newUserForm').onsubmit = saveUser;
+  el('#newSupplierForm').onsubmit = saveSupplier;
+  
+  // Simular entrega de pedidos para teste (apenas para administradores)
+  if (state.logged && state.logged.perfil === 'admin') {
+    // Adicionar botão de simular entrega para testes
+    setTimeout(() => {
+      const ordersLink = el('#ordersLink');
+      if (ordersLink) {
+        ordersLink.innerHTML = 'Meus Pedidos <small style="color:var(--mut)">(Admin)</small>';
+      }
+    }, 100);
+  }
+}
+
+/* ===== SISTEMA DE CHECKOUT E PEDIDOS ===== */
+
+// Função para mostrar checkout
+function showCheckout() {
+  // Verificar se está logado
+  if (!state.logged) {
+    alert('Você precisa estar logado para finalizar a compra.\nClique em "Crie sua conta" para fazer login.');
+    return;
+  }
+  
+  if (state.cart.length === 0) {
+    alert('Adicione pelo menos 1 produto ao carrinho.');
+    return;
+  }
+  
+  // Verificar estoque antes do checkout
+  const stockErrors = [];
+  state.cart.forEach(item => {
+    const product = state.products.find(p => p.id === item.id);
+    if (!product || !product.ativo || product.estoque < item.qty) {
+      stockErrors.push(`${item.title}: Estoque insuficiente`);
+    }
+  });
+  
+  if (stockErrors.length > 0) {
+    alert('Alguns produtos não estão mais disponíveis:\n' + stockErrors.join('\n'));
+    return;
+  }
+  
+  el('#checkoutModal').classList.add('show');
+  renderCheckout();
+}
+
+function hideCheckout() {
+  el('#checkoutModal').classList.remove('show');
+}
+
+// Função para renderizar checkout
+function renderCheckout() {
+  const total = state.cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+  
+  el('#checkoutContent').innerHTML = `
+    <div class="checkout-section">
+      <h4>Resumo do Pedido</h4>
+      <div id="checkoutItems">
+        ${state.cart.map(item => `
+          <div class="cart-item">
+            <img src="${item.img}" alt="${item.title}">
+            <div class="cart-item-info">
+              <div style="font-weight:600">${item.title}</div>
+              <div style="color:var(--mut);font-size:14px">${item.qty}x ${money(item.price)}</div>
+            </div>
+            <div style="font-weight:700">${money(item.price * item.qty)}</div>
+          </div>
+        `).join('')}
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:16px;padding-top:16px;border-top:2px solid var(--line);font-size:18px;font-weight:700">
+        <span>Total:</span>
+        <span>${money(total)}</span>
+      </div>
+    </div>
+    
+    <div class="checkout-section">
+      <h4>Endereço de Entrega</h4>
+      <div id="addressSelection">
+        ${renderAddressSelection()}
+      </div>
+      <button class="btn" onclick="showAddressModal()" style="margin-top:12px">Gerenciar Endereços</button>
+    </div>
+    
+    <div class="checkout-section">
+      <h4>Finalizar Pedido</h4>
+      <p>Confirme os dados e finalize seu pedido.</p>
+      <button class="btn brand" onclick="finalizeOrder()" style="width:100%;margin-top:12px">Finalizar Pedido</button>
+    </div>
+  `;
+}
+
+// Função para renderizar seleção de endereços
+function renderAddressSelection() {
+  if (state.addresses.length === 0) {
+    return '<p style="color:var(--mut)">Nenhum endereço cadastrado. Clique em "Gerenciar Endereços" para adicionar.</p>';
+  }
+  
+  return state.addresses.map((addr, index) => `
+    <div class="address-card" onclick="selectAddress(${index})" data-address="${index}">
+      <h5>${addr.type}</h5>
+      <p>${addr.street}, ${addr.number}${addr.complement ? ', ' + addr.complement : ''}</p>
+      <p>${addr.neighborhood} - ${addr.city}/${addr.state}</p>
+      <p>CEP: ${addr.cep}</p>
+    </div>
+  `).join('');
+}
+
+// Função para selecionar endereço
+function selectAddress(index) {
+  document.querySelectorAll('.address-card').forEach(card => card.classList.remove('selected'));
+  document.querySelector(`[data-address="${index}"]`).classList.add('selected');
+  state.selectedAddress = index;
+}
+
+// Função para mostrar modal de endereços
+function showAddressModal() {
+  // Verificar se está logado
+  if (!state.logged) {
+    alert('Você precisa estar logado para gerenciar endereços.\nClique em "Crie sua conta" para fazer login.');
+    return;
+  }
+  
+  el('#addressModal').classList.add('show');
+  renderAddressModal();
+}
+
+function hideAddressModal() {
+  el('#addressModal').classList.remove('show');
+}
+
+// Função para renderizar modal de endereços
+function renderAddressModal() {
+  el('#addressContent').innerHTML = `
+    <div style="margin-bottom:16px">
+      <h4>Meus Endereços</h4>
+      <p style="color:var(--mut);font-size:14px">Você pode cadastrar até 3 endereços (Residencial, Comercial, Entrega)</p>
+    </div>
+    
+    <div id="addressList">
+      ${state.addresses.map((addr, index) => `
+        <div class="address-card" style="margin-bottom:12px">
+          <div style="display:flex;justify-content:space-between;align-items:start">
+            <div>
+              <h5>${addr.type}</h5>
+              <p>${addr.street}, ${addr.number}${addr.complement ? ', ' + addr.complement : ''}</p>
+              <p>${addr.neighborhood} - ${addr.city}/${addr.state}</p>
+              <p>CEP: ${addr.cep}</p>
+            </div>
+            <div style="display:flex;gap:8px">
+              <button class="btn" onclick="editAddress(${index})" style="font-size:12px;padding:4px 8px">Editar</button>
+              <button class="btn" onclick="deleteAddress(${index})" style="font-size:12px;padding:4px 8px;background:#ef4444;color:white">Excluir</button>
+            </div>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+    
+    ${state.addresses.length < 3 ? `
+      <button class="btn brand" onclick="showAddressForm()" style="width:100%;margin-top:16px">
+        Adicionar Endereço (${state.addresses.length}/3)
+      </button>
+    ` : '<p style="color:var(--mut);text-align:center;margin-top:16px">Máximo de 3 endereços atingido</p>'}
+    
+    <div id="addressForm" style="display:none;margin-top:16px;padding:16px;background:var(--y-50);border-radius:8px">
+      <h5>Novo Endereço</h5>
+      <form id="newAddressForm">
+        <select id="addressType" required>
+          <option value="">Selecione o tipo</option>
+          <option value="Residencial">Residencial</option>
+          <option value="Comercial">Comercial</option>
+          <option value="Entrega">Entrega</option>
+        </select>
+        <input id="addressCep" placeholder="CEP" maxlength="9" required>
+        <input id="addressStreet" placeholder="Rua/Avenida" required>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <input id="addressNumber" placeholder="Número" required>
+          <input id="addressComplement" placeholder="Complemento">
+        </div>
+        <input id="addressNeighborhood" placeholder="Bairro" required>
+        <div style="display:grid;grid-template-columns:2fr 1fr;gap:8px">
+          <input id="addressCity" placeholder="Cidade" required>
+          <input id="addressState" placeholder="UF" maxlength="2" required>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:12px">
+          <button type="submit" class="btn brand" style="flex:1">Salvar</button>
+          <button type="button" class="btn" onclick="hideAddressForm()" style="flex:1">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  `;
+}
+
+// Função para mostrar formulário de endereço
+function showAddressForm() {
+  el('#addressForm').style.display = 'block';
+  el('#newAddressForm').reset();
+}
+
+function hideAddressForm() {
+  el('#addressForm').style.display = 'none';
+}
+
+// Função para salvar endereço
+function saveAddress(event) {
+  event.preventDefault();
+  
+  const type = el('#addressType').value;
+  const cep = el('#addressCep').value.replace(/\D/g,'');
+  const street = el('#addressStreet').value.trim();
+  const number = el('#addressNumber').value.trim();
+  const complement = el('#addressComplement').value.trim();
+  const neighborhood = el('#addressNeighborhood').value.trim();
+  const city = el('#addressCity').value.trim();
+  const stateValue = el('#addressState').value.trim().toUpperCase();
+  
+  if (!type || !cep || !street || !number || !neighborhood || !city || !stateValue) {
+    alert('Preencha todos os campos obrigatórios.');
+    return;
+  }
+  
+  if (cep.length !== 8) {
+    alert('CEP deve ter 8 dígitos.');
+    return;
+  }
+  
+  if (stateValue.length !== 2) {
+    alert('UF deve ter 2 caracteres.');
+    return;
+  }
+  
+  const address = {
+    type,
+    cep: cep.replace(/(\d{5})(\d{3})/, '$1-$2'),
+    street,
+    number,
+    complement,
+    neighborhood,
+    city,
+    state: stateValue
+  };
+  
+  state.addresses.push(address);
+  hideAddressForm();
+  renderAddressModal();
+  renderCheckout();
+}
+
+// Função para editar endereço
+function editAddress(index) {
+  const addr = state.addresses[index];
+  showAddressForm();
+  
+  el('#addressType').value = addr.type;
+  el('#addressCep').value = addr.cep;
+  el('#addressStreet').value = addr.street;
+  el('#addressNumber').value = addr.number;
+  el('#addressComplement').value = addr.complement;
+  el('#addressNeighborhood').value = addr.neighborhood;
+  el('#addressCity').value = addr.city;
+  el('#addressState').value = addr.state;
+  
+  // Modificar o formulário para edição
+  el('#newAddressForm').dataset.editIndex = index;
+}
+
+// Função para excluir endereço
+function deleteAddress(index) {
+  if (confirm('Tem certeza que deseja excluir este endereço?')) {
+    state.addresses.splice(index, 1);
+    renderAddressModal();
+    renderCheckout();
+  }
+}
+
+// Função para finalizar pedido
+function finalizeOrder() {
+  if (!state.selectedAddress && state.addresses.length > 0) {
+    alert('Selecione um endereço de entrega.');
+    return;
+  }
+  
+  if (state.addresses.length === 0) {
+    alert('Cadastre pelo menos um endereço antes de finalizar o pedido.');
+    return;
+  }
+  
+  // Verificar estoque novamente
+  const stockErrors = [];
+  state.cart.forEach(item => {
+    const product = state.products.find(p => p.id === item.id);
+    if (!product || !product.ativo || product.estoque < item.qty) {
+      stockErrors.push(`${item.title}: Estoque insuficiente`);
+    }
+  });
+  
+  if (stockErrors.length > 0) {
+    alert('Alguns produtos não estão mais disponíveis:\n' + stockErrors.join('\n'));
+    return;
+  }
+  
+  // Criar pedido
+  const order = {
+    id: state.nextOrderId++,
+    userId: state.logged.id, // Associar pedido ao usuário
+    date: new Date().toISOString(),
+    items: [...state.cart],
+    total: state.cart.reduce((sum, item) => sum + (item.price * item.qty), 0),
+    address: state.addresses[state.selectedAddress || 0],
+    status: 'aguardando',
+    paymentTimeout: new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString(), // 72 horas
+    deliveryDate: null,
+    cancelDate: null,
+    cancelReason: null,
+    returnDate: null,
+    returnReason: null
+  };
+  
+  // Atualizar estoque
+  state.cart.forEach(cartItem => {
+    const product = state.products.find(p => p.id === cartItem.id);
+    if (product) {
+      product.estoque -= cartItem.qty;
+    }
+  });
+  
+  // Adicionar pedido
+  state.orders.push(order);
+  
+  // Limpar carrinho
+  state.cart = [];
+  updateCartCount();
+  
+  // Fechar modais
+  hideCheckout();
+  
+  alert(`Pedido #${order.id} criado com sucesso!\nStatus: Aguardando Pagamento`);
+  
+  // Atualizar listas
+  renderList();
+}
+
+// Função para mostrar pedidos
+function showOrders() {
+  // Verificar se está logado
+  if (!state.logged) {
+    alert('Você precisa estar logado para visualizar seus pedidos.\nClique em "Crie sua conta" para fazer login.');
+    return;
+  }
+  
+  el('#ordersModal').classList.add('show');
+  renderOrders();
+}
+
+function hideOrdersModal() {
+  el('#ordersModal').classList.remove('show');
+}
+
+// Função para renderizar pedidos
+function renderOrders() {
+  // Filtrar pedidos apenas do usuário logado (exceto admin que vê todos)
+  let userOrders = state.orders;
+  if (state.logged && state.logged.perfil !== 'admin') {
+    userOrders = state.orders.filter(order => order.userId === state.logged.id);
+  }
+  
+  if (userOrders.length === 0) {
+    el('#ordersContent').innerHTML = '<div style="text-align:center;padding:40px;color:var(--mut)">Nenhum pedido encontrado</div>';
+    return;
+  }
+  
+  el('#ordersContent').innerHTML = userOrders.map(order => `
+    <div class="order-card">
+      <div class="order-header">
+        <div>
+          <div class="order-number">Pedido #${order.id}</div>
+          <div class="order-date">${new Date(order.date).toLocaleDateString('pt-BR')}</div>
+        </div>
+        <div class="order-status ${order.status}">${getStatusText(order.status)}</div>
+      </div>
+      
+      <div class="status-flow">
+        ${renderStatusFlow(order.status)}
+      </div>
+      
+      <div class="order-items">
+        ${order.items.map(item => `
+          <div class="order-item">
+            <div>
+              <div style="font-weight:600">${item.title}</div>
+              <div style="color:var(--mut);font-size:14px">Qtd: ${item.qty}</div>
+            </div>
+            <div style="font-weight:700">${money(item.price * item.qty)}</div>
+          </div>
+        `).join('')}
+      </div>
+      
+      <div class="order-total">
+        <span>Total:</span>
+        <span>${money(order.total)}</span>
+      </div>
+      
+      <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--line)">
+        <strong>Endereço de Entrega:</strong>
+        <p style="margin:4px 0;color:var(--mut);font-size:14px">
+          ${order.address.street}, ${order.address.number}${order.address.complement ? ', ' + order.address.complement : ''}<br>
+          ${order.address.neighborhood} - ${order.address.city}/${order.address.state}<br>
+          CEP: ${order.address.cep}
+        </p>
+      </div>
+      
+      ${renderOrderActions(order)}
+    </div>
+  `).join('');
+}
+
+// Função para renderizar fluxo de status
+function renderStatusFlow(status) {
+  const statuses = ['aguardando', 'pago', 'transporte', 'entregue'];
+  const statusTexts = ['Aguardando Pagamento', 'Pago', 'Em Transporte', 'Entregue'];
+  
+  return statuses.map((s, index) => {
+    let className = 'status-step';
+    if (statuses.indexOf(status) > index) className += ' completed';
+    else if (status === s) className += ' current';
+    else className += ' pending';
+    
+    return `
+      <div class="${className}">
+        <span>${statusTexts[index]}</span>
+      </div>
+      ${index < statuses.length - 1 ? '<span class="status-arrow">→</span>' : ''}
+    `;
+  }).join('');
+}
+
+// Função para obter texto do status
+function getStatusText(status) {
+  const statusMap = {
+    'aguardando': 'Aguardando Pagamento',
+    'pago': 'Pago',
+    'transporte': 'Em Transporte',
+    'entregue': 'Entregue',
+    'cancelado': 'Cancelado',
+    'devolvido': 'Devolvido'
+  };
+  return statusMap[status] || status;
+}
+
+// Função para renderizar ações do pedido
+function renderOrderActions(order) {
+  const now = new Date();
+  const orderDate = new Date(order.date);
+  const paymentTimeout = new Date(order.paymentTimeout);
+  const deliveryDate = order.deliveryDate ? new Date(order.deliveryDate) : null;
+  
+  let actions = '';
+  
+  // Verificar timeout de pagamento
+  if (order.status === 'aguardando' && now > paymentTimeout) {
+    order.status = 'cancelado';
+    order.cancelDate = now.toISOString();
+    order.cancelReason = 'Timeout de pagamento (72 horas)';
+    actions += '<div class="timeout-warning">⚠️ Pedido cancelado automaticamente por timeout de pagamento</div>';
+  }
+  
+  // Botões de cancelamento
+  if (order.status === 'aguardando' || order.status === 'pago') {
+    actions += `
+      <div class="order-actions">
+        <button class="btn" onclick="showCancelModal(${order.id})" style="background:#ef4444;color:white">
+          Cancelar Pedido
+        </button>
+    `;
+  }
+  
+  // Botões de devolução
+  if (order.status === 'entregue' && deliveryDate) {
+    const daysSinceDelivery = Math.floor((now - deliveryDate) / (1000 * 60 * 60 * 24));
+    const canReturn = daysSinceDelivery <= 30; // 30 dias para devolução
+    const returnDeadline = 30 - daysSinceDelivery;
+    
+    if (canReturn) {
+      actions += `
+        <button class="btn" onclick="showReturnModal(${order.id})" style="background:#10b981;color:white">
+          Solicitar Devolução
+        </button>
+        <div class="return-deadline">
+          📅 Prazo para devolução: ${returnDeadline} dias restantes
+        </div>
+      `;
+    } else {
+      actions += '<div class="timeout-warning">⚠️ Prazo para devolução expirado</div>';
+    }
+  }
+  
+  // Informações de cancelamento
+  if (order.cancelDate) {
+    actions += `
+      <div style="margin-top:12px;padding:12px;background:#fef2f2;border-radius:8px;border-left:4px solid #ef4444">
+        <strong>Cancelado em:</strong> ${new Date(order.cancelDate).toLocaleString('pt-BR')}<br>
+        <strong>Motivo:</strong> ${order.cancelReason}
+      </div>
+    `;
+  }
+  
+  // Informações de devolução
+  if (order.returnDate) {
+    actions += `
+      <div style="margin-top:12px;padding:12px;background:#f0f9ff;border-radius:8px;border-left:4px solid #3b82f6">
+        <strong>Devolução solicitada em:</strong> ${new Date(order.returnDate).toLocaleString('pt-BR')}<br>
+        <strong>Motivo:</strong> ${order.returnReason}
+      </div>
+    `;
+  }
+  
+  // Botões de administração (apenas para admin)
+  if (state.logged && state.logged.perfil === 'admin') {
+    if (order.status === 'aguardando') {
+      actions += `
+        <button class="btn" onclick="simulatePayment(${order.id})" style="background:#10b981;color:white;font-size:11px">
+          Simular Pagamento
+        </button>
+      `;
+    } else if (order.status === 'pago') {
+      actions += `
+        <button class="btn" onclick="simulateShipping(${order.id})" style="background:#3b82f6;color:white;font-size:11px">
+          Simular Envio
+        </button>
+      `;
+    } else if (order.status === 'transporte') {
+      actions += `
+        <button class="btn" onclick="simulateDelivery(${order.id})" style="background:#8b5cf6;color:white;font-size:11px">
+          Simular Entrega
+        </button>
+      `;
+    }
+  }
+  
+  actions += '</div>';
+  return actions;
+}
+
+// Função para mostrar modal de cancelamento
+function showCancelModal(orderId) {
+  const order = state.orders.find(o => o.id === orderId);
+  if (!order) return;
+  
+  el('#cancelModal').classList.add('show');
+  el('#cancelContent').innerHTML = `
+    <div style="margin-bottom:16px">
+      <h4>Cancelar Pedido #${order.id}</h4>
+      <p style="color:var(--mut)">Valor total: ${money(order.total)}</p>
+    </div>
+    
+    <div style="margin-bottom:16px">
+      <label for="cancelReason" style="display:block;margin-bottom:8px;font-weight:600">
+        Motivo do cancelamento (obrigatório):
+      </label>
+      <textarea id="cancelReason" class="cancel-reason" placeholder="Descreva o motivo do cancelamento..." required></textarea>
+    </div>
+    
+    <div style="display:flex;gap:12px">
+      <button class="btn brand" onclick="confirmCancel(${orderId})" style="flex:1">Confirmar Cancelamento</button>
+      <button class="btn" onclick="hideCancelModal()" style="flex:1">Cancelar</button>
+    </div>
+  `;
+}
+
+function hideCancelModal() {
+  el('#cancelModal').classList.remove('show');
+}
+
+// Função para confirmar cancelamento
+function confirmCancel(orderId) {
+  const reason = el('#cancelReason').value.trim();
+  if (!reason) {
+    alert('Por favor, informe o motivo do cancelamento.');
+    return;
+  }
+  
+  const order = state.orders.find(o => o.id === orderId);
+  if (!order) return;
+  
+  // Verificar se pode cancelar
+  if (order.status !== 'aguardando' && order.status !== 'pago') {
+    alert('Este pedido não pode ser cancelado.');
+    return;
+  }
+  
+  // Cancelar pedido
+  order.status = 'cancelado';
+  order.cancelDate = new Date().toISOString();
+  order.cancelReason = reason;
+  
+  // Restaurar estoque
+  order.items.forEach(item => {
+    const product = state.products.find(p => p.id === item.id);
+    if (product) {
+      product.estoque += item.qty;
+    }
+  });
+  
+  hideCancelModal();
+  renderOrders();
+  renderList(); // Atualizar lista de produtos
+  
+  alert('Pedido cancelado com sucesso!');
+}
+
+// Função para mostrar modal de devolução
+function showReturnModal(orderId) {
+  const order = state.orders.find(o => o.id === orderId);
+  if (!order) return;
+  
+  el('#returnModal').classList.add('show');
+  el('#returnContent').innerHTML = `
+    <div style="margin-bottom:16px">
+      <h4>Solicitar Devolução - Pedido #${order.id}</h4>
+      <p style="color:var(--mut)">Selecione os produtos que deseja devolver:</p>
+    </div>
+    
+    <div id="returnItems">
+      ${order.items.map(item => `
+        <div class="return-item">
+          <input type="checkbox" id="return_${item.id}" value="${item.id}">
+          <div class="return-item-info">
+            <div style="font-weight:600">${item.title}</div>
+            <div style="color:var(--mut);font-size:14px">${money(item.price)} cada</div>
+          </div>
+          <div class="return-item-qty">
+            <label>Qtd:</label>
+            <input type="number" id="qty_${item.id}" value="${item.qty}" min="1" max="${item.qty}">
+          </div>
+        </div>
+      `).join('')}
+    </div>
+    
+    <div style="margin:16px 0">
+      <label for="returnReason" style="display:block;margin-bottom:8px;font-weight:600">
+        Motivo da devolução (obrigatório):
+      </label>
+      <textarea id="returnReason" class="cancel-reason" placeholder="Descreva o motivo da devolução..." required></textarea>
+    </div>
+    
+    <div style="display:flex;gap:12px">
+      <button class="btn brand" onclick="confirmReturn(${orderId})" style="flex:1">Solicitar Devolução</button>
+      <button class="btn" onclick="hideReturnModal()" style="flex:1">Cancelar</button>
+    </div>
+  `;
+}
+
+function hideReturnModal() {
+  el('#returnModal').classList.remove('show');
+}
+
+// Função para confirmar devolução
+function confirmReturn(orderId) {
+  const reason = el('#returnReason').value.trim();
+  if (!reason) {
+    alert('Por favor, informe o motivo da devolução.');
+    return;
+  }
+  
+  const order = state.orders.find(o => o.id === orderId);
+  if (!order) return;
+  
+  // Verificar se pode devolver
+  if (order.status !== 'entregue') {
+    alert('Este pedido não pode ser devolvido.');
+    return;
+  }
+  
+  // Verificar se selecionou pelo menos um produto
+  const selectedItems = [];
+  order.items.forEach(item => {
+    const checkbox = el(`#return_${item.id}`);
+    if (checkbox && checkbox.checked) {
+      const qty = parseInt(el(`#qty_${item.id}`).value) || 0;
+      if (qty > 0 && qty <= item.qty) {
+        selectedItems.push({...item, returnQty: qty});
+      }
+    }
+  });
+  
+  if (selectedItems.length === 0) {
+    alert('Selecione pelo menos um produto para devolver.');
+    return;
+  }
+  
+  // Processar devolução
+  order.status = 'devolvido';
+  order.returnDate = new Date().toISOString();
+  order.returnReason = reason;
+  order.returnItems = selectedItems;
+  
+  // Restaurar estoque
+  selectedItems.forEach(item => {
+    const product = state.products.find(p => p.id === item.id);
+    if (product) {
+      product.estoque += item.returnQty;
+    }
+  });
+  
+  hideReturnModal();
+  renderOrders();
+  renderList(); // Atualizar lista de produtos
+  
+  alert('Devolução solicitada com sucesso!');
+}
+
+// Funções de simulação para administradores
+function simulatePayment(orderId) {
+  const order = state.orders.find(o => o.id === orderId);
+  if (order && order.status === 'aguardando') {
+    order.status = 'pago';
+    renderOrders();
+    alert('Pagamento simulado com sucesso!');
+  }
+}
+
+function simulateShipping(orderId) {
+  const order = state.orders.find(o => o.id === orderId);
+  if (order && order.status === 'pago') {
+    order.status = 'transporte';
+    renderOrders();
+    alert('Envio simulado com sucesso!');
+  }
+}
+
+function simulateDelivery(orderId) {
+  const order = state.orders.find(o => o.id === orderId);
+  if (order && order.status === 'transporte') {
+    order.status = 'entregue';
+    order.deliveryDate = new Date().toISOString();
+    renderOrders();
+    alert('Entrega simulada com sucesso!');
+  }
+}
+
+/* ===== SISTEMA ADMINISTRATIVO ===== */
+
+// Função para mostrar painel administrativo
+function showAdminPanel() {
+  el('#adminModal').classList.add('show');
+  renderAdminDashboard();
+}
+
+function hideAdminModal() {
+  el('#adminModal').classList.remove('show');
+}
+
+// Função para renderizar dashboard administrativo
+function renderAdminDashboard() {
+  const stats = calculateAdminStats();
+  
+  el('#adminContent').innerHTML = `
+    <div class="admin-dashboard">
+      <div class="admin-card">
+        <h4>👥 Usuários</h4>
+        <div class="number">${stats.totalUsers}</div>
+        <div class="description">Total de usuários cadastrados</div>
+        <div class="admin-actions">
+          <button class="btn brand" onclick="showUsersManagement()">Gerenciar Usuários</button>
+        </div>
+      </div>
+      
+      <div class="admin-card">
+        <h4>📦 Produtos</h4>
+        <div class="number">${stats.totalProducts}</div>
+        <div class="description">Produtos cadastrados no sistema</div>
+        <div class="admin-actions">
+          <button class="btn brand" onclick="showProductMgmt()">Gerenciar Produtos</button>
+        </div>
+      </div>
+      
+      <div class="admin-card">
+        <h4>🛒 Pedidos</h4>
+        <div class="number">${stats.totalOrders}</div>
+        <div class="description">Pedidos realizados</div>
+        <div class="admin-actions">
+          <button class="btn brand" onclick="showOrdersManagement()">Ver Todos os Pedidos</button>
+        </div>
+      </div>
+      
+      <div class="admin-card">
+        <h4>🏢 Fornecedores</h4>
+        <div class="number">${stats.totalSuppliers}</div>
+        <div class="description">Fornecedores cadastrados</div>
+        <div class="admin-actions">
+          <button class="btn brand" onclick="showSuppliersManagement()">Gerenciar Fornecedores</button>
+        </div>
+      </div>
+    </div>
+    
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="icon">💰</div>
+        <div class="value">${money(stats.totalRevenue)}</div>
+        <div class="label">Faturamento Total</div>
+      </div>
+      <div class="stat-card">
+        <div class="icon">📈</div>
+        <div class="value">${stats.avgOrderValue}</div>
+        <div class="label">Ticket Médio</div>
+      </div>
+      <div class="stat-card">
+        <div class="icon">⏳</div>
+        <div class="value">${stats.pendingOrders}</div>
+        <div class="label">Pedidos Pendentes</div>
+      </div>
+      <div class="stat-card">
+        <div class="icon">✅</div>
+        <div class="value">${stats.completedOrders}</div>
+        <div class="label">Pedidos Entregues</div>
+      </div>
+    </div>
+  `;
+}
+
+// Função para calcular estatísticas administrativas
+function calculateAdminStats() {
+  const totalUsers = state.users.length;
+  const totalProducts = state.products.length;
+  const totalOrders = state.orders.length;
+  const totalSuppliers = state.suppliers.length;
+  
+  const totalRevenue = state.orders.reduce((sum, order) => sum + order.total, 0);
+  const avgOrderValue = totalOrders > 0 ? money(totalRevenue / totalOrders) : money(0);
+  
+  const pendingOrders = state.orders.filter(order => 
+    ['aguardando', 'pago', 'transporte'].includes(order.status)
+  ).length;
+  
+  const completedOrders = state.orders.filter(order => 
+    order.status === 'entregue'
+  ).length;
+  
+  return {
+    totalUsers,
+    totalProducts,
+    totalOrders,
+    totalSuppliers,
+    totalRevenue,
+    avgOrderValue,
+    pendingOrders,
+    completedOrders
+  };
+}
+
+// Função para mostrar gestão de usuários
+function showUsersManagement() {
+  el('#usersModal').classList.add('show');
+  renderUsersManagement();
+}
+
+function hideUsersModal() {
+  el('#usersModal').classList.remove('show');
+}
+
+// Função para renderizar gestão de usuários
+function renderUsersManagement() {
+  el('#usersContent').innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+      <h4>Lista de Usuários</h4>
+      <button class="btn brand" onclick="showAddUserForm()">Adicionar Usuário</button>
+    </div>
+    
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Nome</th>
+          <th>Email</th>
+          <th>Perfil</th>
+          <th>Status</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${state.users.map(user => `
+          <tr>
+            <td>${user.id}</td>
+            <td>${user.nome}</td>
+            <td>${user.email}</td>
+            <td>
+              <span class="status-badge ${user.perfil}">${user.perfil}</span>
+            </td>
+            <td>
+              <span class="status-badge active">Ativo</span>
+            </td>
+            <td class="actions">
+              <button class="btn" onclick="editUser(${user.id})">Editar</button>
+              <button class="btn" onclick="deleteUser(${user.id})" style="background:#ef4444;color:white">Excluir</button>
+            </td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+    
+    <div id="addUserForm" style="display:none;margin-top:20px;padding:20px;background:var(--y-50);border-radius:8px">
+      <h5>Adicionar Novo Usuário</h5>
+      <form id="newUserForm">
+        <input id="userName" placeholder="Nome completo" required>
+        <input id="userEmail" type="email" placeholder="Email" required>
+        <input id="userPassword" type="password" placeholder="Senha" required>
+        <select id="userProfile" required>
+          <option value="">Selecione o perfil</option>
+          <option value="admin">Administrador</option>
+          <option value="client">Cliente</option>
+        </select>
+        <div style="display:flex;gap:12px;margin-top:16px">
+          <button type="submit" class="btn brand" style="flex:1">Salvar</button>
+          <button type="button" class="btn" onclick="hideAddUserForm()" style="flex:1">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  `;
+}
+
+// Função para mostrar formulário de adicionar usuário
+function showAddUserForm() {
+  el('#addUserForm').style.display = 'block';
+  el('#newUserForm').reset();
+}
+
+function hideAddUserForm() {
+  el('#addUserForm').style.display = 'none';
+}
+
+// Função para salvar usuário
+function saveUser(event) {
+  event.preventDefault();
+  
+  const nome = el('#userName').value.trim();
+  const email = el('#userEmail').value.trim();
+  const senha = el('#userPassword').value;
+  const perfil = el('#userProfile').value;
+  
+  if (!nome || !email || !senha || !perfil) {
+    alert('Preencha todos os campos.');
+    return;
+  }
+  
+  if (!validPass(senha)) {
+    alert('Senha deve ter pelo menos 10 caracteres, incluindo números, letras e caracteres especiais.');
+    return;
+  }
+  
+  if (!uniqueEmail(email)) {
+    alert('E-mail já cadastrado.');
+    return;
+  }
+  
+  state.users.push({
+    id: state.nextUID++,
+    nome,
+    email,
+    perfil,
+    senha
+  });
+  
+  hideAddUserForm();
+  renderUsersManagement();
+  alert('Usuário adicionado com sucesso!');
+}
+
+// Função para editar usuário
+function editUser(userId) {
+  const user = state.users.find(u => u.id === userId);
+  if (!user) return;
+  
+  const newName = prompt('Novo nome:', user.nome);
+  if (newName && newName.trim()) {
+    user.nome = newName.trim();
+    renderUsersManagement();
+    alert('Usuário atualizado com sucesso!');
+  }
+}
+
+// Função para excluir usuário
+function deleteUser(userId) {
+  if (userId === state.logged.id) {
+    alert('Você não pode excluir sua própria conta.');
+    return;
+  }
+  
+  if (confirm('Tem certeza que deseja excluir este usuário?')) {
+    const index = state.users.findIndex(u => u.id === userId);
+    if (index > -1) {
+      state.users.splice(index, 1);
+      renderUsersManagement();
+      alert('Usuário excluído com sucesso!');
+    }
+  }
+}
+
+// Função para mostrar gestão de fornecedores
+function showSuppliersManagement() {
+  el('#suppliersModal').classList.add('show');
+  renderSuppliersManagement();
+}
+
+function hideSuppliersModal() {
+  el('#suppliersModal').classList.remove('show');
+}
+
+// Função para renderizar gestão de fornecedores
+function renderSuppliersManagement() {
+  el('#suppliersContent').innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+      <h4>Lista de Fornecedores</h4>
+      <button class="btn brand" onclick="showAddSupplierForm()">Adicionar Fornecedor</button>
+    </div>
+    
+    <div id="suppliersList">
+      ${state.suppliers.length === 0 ? 
+        '<div style="text-align:center;padding:40px;color:var(--mut)">Nenhum fornecedor cadastrado</div>' :
+        state.suppliers.map(supplier => `
+          <div class="supplier-card">
+            <div style="display:flex;justify-content:space-between;align-items:start">
+              <div>
+                <h5>${supplier.name}</h5>
+                <div class="contact">📧 ${supplier.email}</div>
+                <div class="contact">📞 ${supplier.phone}</div>
+                <div class="contact">🏢 ${supplier.company}</div>
+                <div class="contact">📍 ${supplier.address}</div>
+                <div class="status">
+                  <span class="status-badge ${supplier.active ? 'active' : 'inactive'}">
+                    ${supplier.active ? 'Ativo' : 'Inativo'}
+                  </span>
+                </div>
+              </div>
+              <div style="display:flex;gap:8px">
+                <button class="btn" onclick="editSupplier(${supplier.id})">Editar</button>
+                <button class="btn" onclick="toggleSupplierStatus(${supplier.id})" 
+                        style="background:${supplier.active ? '#ef4444' : '#10b981'};color:white">
+                  ${supplier.active ? 'Desativar' : 'Ativar'}
+                </button>
+                <button class="btn" onclick="deleteSupplier(${supplier.id})" 
+                        style="background:#ef4444;color:white">Excluir</button>
+              </div>
+            </div>
+          </div>
+        `).join('')
+      }
+    </div>
+    
+    <div id="addSupplierForm" style="display:none;margin-top:20px;padding:20px;background:var(--y-50);border-radius:8px">
+      <h5>Adicionar Novo Fornecedor</h5>
+      <form id="newSupplierForm">
+        <input id="supplierName" placeholder="Nome do fornecedor" required>
+        <input id="supplierEmail" type="email" placeholder="Email" required>
+        <input id="supplierPhone" placeholder="Telefone" required>
+        <input id="supplierCompany" placeholder="Empresa" required>
+        <textarea id="supplierAddress" placeholder="Endereço completo" rows="3" required></textarea>
+        <div style="display:flex;align-items:center;gap:10px;margin:12px 0">
+          <input id="supplierActive" type="checkbox" checked>
+          <label for="supplierActive">Fornecedor ativo</label>
+        </div>
+        <div style="display:flex;gap:12px;margin-top:16px">
+          <button type="submit" class="btn brand" style="flex:1">Salvar</button>
+          <button type="button" class="btn" onclick="hideAddSupplierForm()" style="flex:1">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  `;
+}
+
+// Função para mostrar formulário de adicionar fornecedor
+function showAddSupplierForm() {
+  el('#addSupplierForm').style.display = 'block';
+  el('#newSupplierForm').reset();
+}
+
+function hideAddSupplierForm() {
+  el('#addSupplierForm').style.display = 'none';
+}
+
+// Função para salvar fornecedor
+function saveSupplier(event) {
+  event.preventDefault();
+  
+  const name = el('#supplierName').value.trim();
+  const email = el('#supplierEmail').value.trim();
+  const phone = el('#supplierPhone').value.trim();
+  const company = el('#supplierCompany').value.trim();
+  const address = el('#supplierAddress').value.trim();
+  const active = el('#supplierActive').checked;
+  
+  if (!name || !email || !phone || !company || !address) {
+    alert('Preencha todos os campos obrigatórios.');
+    return;
+  }
+  
+  state.suppliers.push({
+    id: state.nextSupplierId++,
+    name,
+    email,
+    phone,
+    company,
+    address,
+    active,
+    createdAt: new Date().toISOString()
+  });
+  
+  hideAddSupplierForm();
+  renderSuppliersManagement();
+  alert('Fornecedor adicionado com sucesso!');
+}
+
+// Função para editar fornecedor
+function editSupplier(supplierId) {
+  const supplier = state.suppliers.find(s => s.id === supplierId);
+  if (!supplier) return;
+  
+  const newName = prompt('Novo nome:', supplier.name);
+  if (newName && newName.trim()) {
+    supplier.name = newName.trim();
+    renderSuppliersManagement();
+    alert('Fornecedor atualizado com sucesso!');
+  }
+}
+
+// Função para alternar status do fornecedor
+function toggleSupplierStatus(supplierId) {
+  const supplier = state.suppliers.find(s => s.id === supplierId);
+  if (!supplier) return;
+  
+  supplier.active = !supplier.active;
+  renderSuppliersManagement();
+  alert(`Fornecedor ${supplier.active ? 'ativado' : 'desativado'} com sucesso!`);
+}
+
+// Função para excluir fornecedor
+function deleteSupplier(supplierId) {
+  if (confirm('Tem certeza que deseja excluir este fornecedor?')) {
+    const index = state.suppliers.findIndex(s => s.id === supplierId);
+    if (index > -1) {
+      state.suppliers.splice(index, 1);
+      renderSuppliersManagement();
+      alert('Fornecedor excluído com sucesso!');
+    }
+  }
+}
+
+// Função para mostrar gestão de pedidos (admin)
+function showOrdersManagement() {
+  el('#ordersModal').classList.add('show');
+  renderOrders();
+}
+</script>
+</body>
+</html>
+
+
